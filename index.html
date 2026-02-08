@@ -824,10 +824,7 @@
             to {
                 transform: translateX(0);
                 opacity: 1;
-            }
-        }
     </style>
-</head>
 <body>
     <div class="bg-grid"></div>
     
@@ -1045,810 +1042,1093 @@
                     <input type="text" class="input-field" id="signupUserId" placeholder="ID 입력 (4자 이상)">
                 </div>
 
-                <div class="input-group">
-                    <label class="input-label">비밀번호</label>
-                    <input type="password" class="input-field" id="signupPassword" placeholder="비밀번호 입력 (4자 이상)">
-                </div>
-
-                <div class="input-group">
-                    <label class="input-label">비밀번호 확인</label>
-                    <input type="password" class="input-field" id="signupPasswordConfirm" placeholder="비밀번호 재입력">
-                </div>
-
-                <button class="execute-btn buy" onclick="signupUser()" style="margin-bottom: 10px;">회원가입</button>
-                <button class="execute-btn" onclick="switchToLogin()" style="background: var(--text-secondary);">로그인으로 돌아가기</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Firebase SDK -->
+    <!-- Scripts -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <script>
-        // ============================================
-        // Firebase 설정
-        // ============================================
-        // 여기에 Firebase 프로젝트 설정을 입력하세요
-        // Firebase Console (https://console.firebase.google.com/)에서 프로젝트 생성 후
-        // 프로젝트 설정 > 일반 > 내 앱 > Firebase SDK snippet > 구성에서 복사
-        const firebaseConfig = {
-            apiKey: "AIzaSyDczRJGqLpJ9xlLWPTFkOZU2tC3tMRvA1U",
-            authDomain: "stock-game-c3cad.firebaseapp.com",
-            databaseURL: "https://stock-game-c3cad-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "stock-game-c3cad",
-            storageBucket: "stock-game-c3cad.firebasestorage.app",
-            messagingSenderId: "638224580097",
-            appId: "1:638224580097:web:010c218bdc3460e57a8a00",
-            measurementId: "G-CKBNG8ZXYQ"
-        };
+// ============================================
+// Firebase 설정
+// ============================================
+// Firebase Console (https://console.firebase.google.com/)에서 
+// 프로젝트 설정 > 일반 > 내 앱 > Firebase SDK snippet > 구성에서 복사한 값 입력
 
-        // Firebase 초기화
-        let database;
-        try {
-            firebase.initializeApp(firebaseConfig);
-            database = firebase.database();
-            console.log('Firebase 연결 성공!');
-        } catch (error) {
-            console.error('Firebase 연결 실패:', error);
-            alert('⚠️ Firebase 설정이 필요합니다!\n\n코드 상단의 firebaseConfig를 설정해주세요.\n\n설정 방법:\n1. https://console.firebase.google.com/ 접속\n2. 새 프로젝트 생성\n3. Realtime Database 활성화\n4. 프로젝트 설정에서 구성 정보 복사\n5. HTML 파일의 firebaseConfig에 붙여넣기');
-        }
-        // ============================================
+const firebaseConfig = {
+    apiKey: "AIzaSyDczRJGqLpJ9xlLWPTFkOZU2tC3tMRvA1U",
+    authDomain: "stock-game-c3cad.firebaseapp.com",
+    databaseURL: "https://stock-game-c3cad-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "stock-game-c3cad",
+    storageBucket: "stock-game-c3cad.firebasestorage.app",
+    messagingSenderId: "638224580097",
+    appId: "1:638224580097:web:010c218bdc3460e57a8a00",
+    measurementId: "G-CKBNG8ZXYQ"
+};
 
-        // ============================================
-        // 관리자 비밀번호 설정 (여기서 수정 가능)
-        // ============================================
-        let ADMIN_PASSWORD = "admin1234";  // 기본 비밀번호
-        // ============================================
+// Firebase 초기화
+let database;
+try {
+    firebase.initializeApp(firebaseConfig);
+    database = firebase.database();
+    console.log('Firebase 연결 성공!');
+} catch (error) {
+    console.error('Firebase 연결 실패:', error);
+    alert('⚠️ Firebase 설정이 필요합니다!\n\n코드 상단의 firebaseConfig를 설정해주세요.\n\n설정 방법:\n1. https://console.firebase.google.com/ 접속\n2. 새 프로젝트 생성\n3. Realtime Database 활성화\n4. 프로젝트 설정에서 구성 정보 복사\n5. config.js 파일의 firebaseConfig에 붙여넣기');
+}
 
-        // 사용자 시스템
-        let currentUser = null;
+// ============================================
+// 관리자 비밀번호 설정
+// ============================================
+let ADMIN_PASSWORD = "admin1234";  // 기본 비밀번호 (원하는 값으로 변경 가능)
+    </script>
+    <script>
+// ============================================
+// 전역 변수 선언
+// ============================================
 
-        // 가상 주식 데이터
-        const stocks = [
-            { symbol: 'TECH-001', name: '네오테크', price: 125000, change: 2.04, sector: 'technology' },
-            { symbol: 'FINC-002', name: '퓨처뱅크', price: 89500, change: -1.23, sector: 'finance' },
-            { symbol: 'BIO-003', name: '바이오젠', price: 234000, change: 5.67, sector: 'biotech' },
-            { symbol: 'AUTO-004', name: '스마트카', price: 67800, change: 3.21, sector: 'automotive' },
-            { symbol: 'ENR-005', name: '그린에너지', price: 145000, change: -0.87, sector: 'energy' },
-            { symbol: 'GAME-006', name: '넥스트게임즈', price: 98700, change: 8.42, sector: 'entertainment' },
-            { symbol: 'FOOD-007', name: '퓨전푸드', price: 52300, change: 1.15, sector: 'food' },
-            { symbol: 'REAL-008', name: '메트로부동산', price: 187000, change: -2.34, sector: 'realestate' },
-        ];
+// 사용자 시스템
+let currentUser = null;
 
-        let currentStock = stocks[0];
-        let tradeMode = 'buy';
-        let userCash = 10000000;
-        let portfolio = {};
-        let chartInstance = null;
+// 가상 주식 데이터 - Firebase에서 동기화
+let stocks = [];
 
-        // 리더보드 데이터
-        const leaderboard = [
-            { name: 'TraderKing', profit: 2350000 },
-            { name: 'StockMaster', profit: 1890000 },
-            { name: 'InvestPro', profit: 1560000 },
-            { name: 'You', profit: 0 },
-            { name: 'MarketGuru', profit: -450000 },
-        ];
+// 초기 주식 데이터 (Firebase에 없을 때만 사용)
+const INITIAL_STOCKS = [
+    { symbol: 'TECH-001', name: '네오테크', price: 125000, change: 0, sector: 'technology' },
+    { symbol: 'FINC-002', name: '퓨처뱅크', price: 89500, change: 0, sector: 'finance' },
+    { symbol: 'BIO-003', name: '바이오젠', price: 234000, change: 0, sector: 'biotech' },
+    { symbol: 'AUTO-004', name: '스마트카', price: 67800, change: 0, sector: 'automotive' },
+    { symbol: 'ENR-005', name: '그린에너지', price: 145000, change: 0, sector: 'energy' },
+    { symbol: 'GAME-006', name: '넥스트게임즈', price: 98700, change: 0, sector: 'entertainment' },
+    { symbol: 'FOOD-007', name: '퓨전푸드', price: 52300, change: 0, sector: 'food' },
+    { symbol: 'REAL-008', name: '메트로부동산', price: 187000, change: 0, sector: 'realestate' },
+];
 
-        // 초기화
-        async function init() {
-            // 로그인 체크
-            const savedUser = localStorage.getItem('fwb_currentUser');
-            if (savedUser && database) {
-                currentUser = savedUser;
-                await loadUserData();
-                document.getElementById('loginModal').style.display = 'none';
-            } else {
-                document.getElementById('loginModal').style.display = 'flex';
-                return;
+let currentStock = null;
+let tradeMode = 'buy';
+let userCash = 10000000;
+let portfolio = {};
+let chartInstance = null;
+
+// 리더보드 데이터 - Firebase에서 실시간 계산
+let leaderboard = [];
+
+// 주가 업데이트 관리자 확인
+let isPriceUpdater = false;
+let priceUpdateInterval = null;
+
+// ============================================
+// Firebase 실시간 동기화 함수
+// ============================================
+
+// 주식 데이터 실시간 구독
+function subscribeToStocks() {
+    if (!database) return;
+    
+    database.ref('stocks').on('value', (snapshot) => {
+        const stocksData = snapshot.val();
+        
+        if (!stocksData) {
+            // Firebase에 주식 데이터가 없으면 초기 데이터 생성
+            console.log('주식 데이터 초기화 중...');
+            initializeStocks();
+        } else {
+            // Firebase에서 주식 데이터 로드
+            stocks = Object.values(stocksData);
+            console.log('주식 데이터 로드 완료:', stocks.length, '개');
+            
+            if (!currentStock && stocks.length > 0) {
+                currentStock = stocks[0];
             }
-
+            
             renderStockList();
-            renderLeaderboard();
-            renderAdminStockList();
-            selectStock(stocks[0]);
+            if (currentStock) {
+                selectStock(stocks.find(s => s.symbol === currentStock.symbol) || stocks[0]);
+            }
             updatePortfolio();
-            startPriceSimulation();
+            updateBalance();
         }
+    });
+}
 
-        // 사용자 데이터 로드
-        async function loadUserData() {
-            if (!currentUser || !database) {
-                currentUser = null;
-                userCash = 10000000;
-                portfolio = {};
-                return;
-            }
+// 주식 데이터 초기화 (최초 1회만)
+async function initializeStocks() {
+    if (!database) return;
+    
+    try {
+        const stocksObj = {};
+        INITIAL_STOCKS.forEach(stock => {
+            stocksObj[stock.symbol] = stock;
+        });
+        
+        await database.ref('stocks').set(stocksObj);
+        console.log('주식 데이터 초기화 완료!');
+    } catch (error) {
+        console.error('주식 데이터 초기화 실패:', error);
+    }
+}
 
-            try {
-                const snapshot = await database.ref('users/' + currentUser).once('value');
-                const userData = snapshot.val();
-                
-                if (!userData) {
-                    userCash = 10000000;
-                    portfolio = {};
-                } else {
-                    userCash = userData.cash || 10000000;
-                    portfolio = userData.portfolio || {};
-                }
-                
-                document.getElementById('currentUserId').textContent = currentUser;
-                updateBalance();
-                updatePortfolio();
-            } catch (error) {
-                console.error('데이터 로드 실패:', error);
-                showToast('데이터 로드 중 오류가 발생했습니다!', 'error');
-            }
+// 랭킹 실시간 구독
+function subscribeToLeaderboard() {
+    if (!database) return;
+    
+    database.ref('users').on('value', async (snapshot) => {
+        const usersData = snapshot.val();
+        
+        if (!usersData) {
+            leaderboard = [];
+            renderLeaderboard();
+            return;
         }
-
-        // 사용자 데이터 저장
-        async function saveUserData() {
-            if (!currentUser || !database) return;
-
-            try {
-                await database.ref('users/' + currentUser).update({
-                    cash: userCash,
-                    portfolio: portfolio,
-                    lastUpdate: new Date().toISOString()
-                });
-            } catch (error) {
-                console.error('데이터 저장 실패:', error);
-                showToast('데이터 저장 중 오류가 발생했습니다!', 'error');
-            }
-        }
-
-        // 로그인
-        async function loginUser() {
-            const userId = document.getElementById('loginUserId').value.trim();
-            const password = document.getElementById('loginPassword').value;
-
-            if (!userId || !password) {
-                showToast('ID와 비밀번호를 입력하세요!', 'error');
-                return;
-            }
-
-            if (!database) {
-                showToast('Firebase 연결이 필요합니다!', 'error');
-                return;
-            }
-
-            try {
-                const snapshot = await database.ref('users/' + userId).once('value');
-                const userData = snapshot.val();
-
-                if (!userData) {
-                    showToast('존재하지 않는 사용자입니다!', 'error');
-                    return;
-                }
-
-                if (userData.password !== password) {
-                    showToast('비밀번호가 올바르지 않습니다!', 'error');
-                    return;
-                }
-
-                currentUser = userId;
-                localStorage.setItem('fwb_currentUser', userId);
-                await loadUserData();
-                
-                document.getElementById('loginModal').style.display = 'none';
-                document.getElementById('loginUserId').value = '';
-                document.getElementById('loginPassword').value = '';
-                
-                renderStockList();
-                renderLeaderboard();
-                renderAdminStockList();
-                selectStock(stocks[0]);
-                updatePortfolio();
-                startPriceSimulation();
-                
-                showToast(`환영합니다, ${userId}님!`, 'success');
-            } catch (error) {
-                console.error('로그인 실패:', error);
-                showToast('로그인 중 오류가 발생했습니다!', 'error');
-            }
-        }
-
-        // 회원가입
-        async function signupUser() {
-            const userId = document.getElementById('signupUserId').value.trim();
-            const password = document.getElementById('signupPassword').value;
-            const passwordConfirm = document.getElementById('signupPasswordConfirm').value;
-
-            if (!userId || userId.length < 4) {
-                showToast('ID는 4자 이상이어야 합니다!', 'error');
-                return;
-            }
-
-            if (!password || password.length < 4) {
-                showToast('비밀번호는 4자 이상이어야 합니다!', 'error');
-                return;
-            }
-
-            if (password !== passwordConfirm) {
-                showToast('비밀번호가 일치하지 않습니다!', 'error');
-                return;
-            }
-
-            if (!database) {
-                showToast('Firebase 연결이 필요합니다!', 'error');
-                return;
-            }
-
-            try {
-                // 사용자 존재 여부 확인
-                const snapshot = await database.ref('users/' + userId).once('value');
-                if (snapshot.exists()) {
-                    showToast('이미 존재하는 ID입니다!', 'error');
-                    return;
-                }
-
-                // 새 사용자 생성
-                await database.ref('users/' + userId).set({
-                    password: password,
-                    cash: 10000000,
-                    portfolio: {},
-                    createdAt: new Date().toISOString()
-                });
-
-                showToast('회원가입 성공! 로그인해주세요.', 'success');
-                
-                document.getElementById('signupUserId').value = '';
-                document.getElementById('signupPassword').value = '';
-                document.getElementById('signupPasswordConfirm').value = '';
-                
-                switchToLogin();
-            } catch (error) {
-                console.error('회원가입 실패:', error);
-                showToast('회원가입 중 오류가 발생했습니다!', 'error');
-            }
-        }
-
-        // 로그아웃
-        function logout() {
-            if (!confirm('로그아웃 하시겠습니까?')) return;
-
-            saveUserData();
-            currentUser = null;
-            localStorage.removeItem('fwb_currentUser');
-            location.reload();
-        }
-
-        // 로그인/회원가입 화면 전환
-        function switchToSignup() {
-            document.getElementById('loginForm').style.display = 'none';
-            document.getElementById('signupForm').style.display = 'block';
-            document.getElementById('authTitle').textContent = '회원가입';
-        }
-
-        function switchToLogin() {
-            document.getElementById('signupForm').style.display = 'none';
-            document.getElementById('loginForm').style.display = 'block';
-            document.getElementById('authTitle').textContent = '로그인';
-        }
-
-        // 주식 리스트 렌더링
-        function renderStockList() {
-            const container = document.getElementById('stockListContainer');
-            container.innerHTML = stocks.map(stock => `
-                <div class="stock-item ${stock.symbol === currentStock.symbol ? 'active' : ''}" 
-                     onclick="selectStock(${JSON.stringify(stock).replace(/"/g, '&quot;')})">
-                    <div class="stock-symbol">${stock.symbol}</div>
-                    <div class="stock-name">${stock.name}</div>
-                    <div class="stock-price-info">
-                        <span class="stock-price">₩${stock.price.toLocaleString()}</span>
-                        <span class="stock-change ${stock.change >= 0 ? 'up' : 'down'}">
-                            ${stock.change >= 0 ? '+' : ''}${stock.change.toFixed(2)}%
-                        </span>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        // 주식 선택
-        function selectStock(stock) {
-            currentStock = stock;
-            document.getElementById('chartSymbol').textContent = stock.symbol;
-            document.getElementById('chartPrice').textContent = `₩${stock.price.toLocaleString()}`;
-            document.getElementById('chartChange').textContent = 
-                `${stock.change >= 0 ? '+' : ''}${(stock.price * stock.change / 100).toLocaleString()} (${stock.change >= 0 ? '+' : ''}${stock.change.toFixed(2)}%)`;
-            document.getElementById('chartChange').className = `price-change ${stock.change >= 0 ? 'up' : 'down'}`;
-            document.getElementById('tradePrice').value = stock.price;
+        
+        // 모든 사용자의 자산 계산
+        const rankings = [];
+        
+        for (const userId in usersData) {
+            const userData = usersData[userId];
+            let totalAssets = userData.cash || 10000000;
             
-            renderStockList();
-            updateChart();
-            updateTradeSummary();
-        }
-
-        // 차트 업데이트
-        function updateChart() {
-            const canvas = document.getElementById('chartCanvas');
-            const ctx = canvas.getContext('2d');
-            
-            // 타임프레임에 따른 데이터 포인트 수 결정
-            const activeTimeBtn = document.querySelector('.time-btn.active');
-            const timeRange = activeTimeBtn ? activeTimeBtn.getAttribute('data-range') : '1M';
-            
-            let dataPoints;
-            switch(timeRange) {
-                case '1M': dataPoints = 60; break;    // 1분 = 60개 포인트 (1초마다)
-                case '30M': dataPoints = 30; break;   // 30분 = 30개 포인트 (1분마다)
-                case '1H': dataPoints = 60; break;    // 1시간 = 60개 포인트 (1분마다)
-                case '1D': dataPoints = 24; break;    // 1일 = 24개 포인트 (1시간마다)
-                case '1MO': dataPoints = 30; break;   // 1개월 = 30개 포인트 (1일마다)
-                default: dataPoints = 60;
-            }
-            
-            const labels = Array.from({length: dataPoints}, (_, i) => i);
-            const basePrice = currentStock.price;
-            const data = Array.from({length: dataPoints}, (_, i) => {
-                const volatility = basePrice * 0.05; // 5% 변동성
-                const trend = (currentStock.change / 100) * basePrice * (i / dataPoints);
-                return basePrice + trend + (Math.random() - 0.5) * volatility;
-            });
-
-            if (chartInstance) {
-                chartInstance.destroy();
-            }
-
-            chartInstance = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: currentStock.symbol,
-                        data: data,
-                        borderColor: currentStock.change >= 0 ? '#00ff88' : '#ff3366',
-                        backgroundColor: currentStock.change >= 0 ? 
-                            'rgba(0, 255, 136, 0.1)' : 'rgba(255, 51, 102, 0.1)',
-                        borderWidth: 2,
-                        tension: 0.4,
-                        fill: true,
-                        pointRadius: 0,
-                        pointHoverRadius: 5,
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            backgroundColor: '#1a2234',
-                            titleColor: '#00d4ff',
-                            bodyColor: '#e8edf4',
-                            borderColor: '#2a3547',
-                            borderWidth: 1,
-                            callbacks: {
-                                label: (context) => `₩${context.parsed.y.toLocaleString()}`
-                            }
-                        }
-                    },
-                    scales: {
-                        x: { display: false },
-                        y: {
-                            grid: { color: '#2a3547' },
-                            ticks: {
-                                color: '#8b95a8',
-                                callback: (value) => `₩${value.toLocaleString()}`
-                            }
-                        }
+            // 포트폴리오 가치 계산
+            if (userData.portfolio) {
+                for (const symbol in userData.portfolio) {
+                    const stock = stocks.find(s => s.symbol === symbol);
+                    if (stock) {
+                        totalAssets += userData.portfolio[symbol].quantity * stock.price;
                     }
                 }
+            }
+            
+            const profit = totalAssets - 10000000;
+            rankings.push({
+                name: userId,
+                profit: profit,
+                isCurrentUser: userId === currentUser
             });
         }
+        
+        // 수익률 순으로 정렬
+        rankings.sort((a, b) => b.profit - a.profit);
+        
+        leaderboard = rankings;
+        renderLeaderboard();
+    });
+}
 
-        // 탭 전환
-        function switchTab(mode) {
-            tradeMode = mode;
-            document.querySelectorAll('.trade-tab').forEach(tab => tab.classList.remove('active'));
-            document.querySelector(`.trade-tab.${mode}`).classList.add('active');
-            
-            const btn = document.getElementById('executeBtn');
-            btn.className = `execute-btn ${mode}`;
-            btn.textContent = mode === 'buy' ? '매수 주문' : '매도 주문';
-            
-            updateTradeSummary();
-        }
-
-        // 거래 요약 업데이트
-        function updateTradeSummary() {
-            const quantity = parseInt(document.getElementById('tradeQuantity').value) || 0;
-            const price = currentStock.price;
-            const total = quantity * price;
-
-            document.getElementById('summaryQuantity').textContent = `${quantity} 주`;
-            document.getElementById('summaryPrice').textContent = `₩${price.toLocaleString()}`;
-            document.getElementById('summaryTotal').textContent = `₩${total.toLocaleString()}`;
-        }
-
-        document.getElementById('tradeQuantity').addEventListener('input', updateTradeSummary);
-
-        // 거래 실행
-        function executeTrade() {
-            const quantity = parseInt(document.getElementById('tradeQuantity').value);
-            const price = currentStock.price;
-            const total = quantity * price;
-
-            if (tradeMode === 'buy') {
-                if (total > userCash) {
-                    showToast('현금이 부족합니다!', 'error');
-                    return;
-                }
-                
-                userCash -= total;
-                if (!portfolio[currentStock.symbol]) {
-                    portfolio[currentStock.symbol] = {
-                        name: currentStock.name,
-                        quantity: 0,
-                        avgPrice: 0
-                    };
-                }
-                
-                const holding = portfolio[currentStock.symbol];
-                holding.avgPrice = ((holding.avgPrice * holding.quantity) + total) / (holding.quantity + quantity);
-                holding.quantity += quantity;
-                
-                showToast(`${currentStock.symbol} ${quantity}주 매수 완료!`, 'success');
-            } else {
-                if (!portfolio[currentStock.symbol] || portfolio[currentStock.symbol].quantity < quantity) {
-                    showToast('보유 수량이 부족합니다!', 'error');
-                    return;
-                }
-                
-                userCash += total;
-                portfolio[currentStock.symbol].quantity -= quantity;
-                
-                if (portfolio[currentStock.symbol].quantity === 0) {
-                    delete portfolio[currentStock.symbol];
-                }
-                
-                showToast(`${currentStock.symbol} ${quantity}주 매도 완료!`, 'success');
-            }
-
-            updateBalance();
-            updatePortfolio();
-            saveUserData(); // 데이터 저장
-            document.getElementById('tradeQuantity').value = 1;
-            updateTradeSummary();
-        }
-
-        // 잔액 업데이트
-        function updateBalance() {
-            document.getElementById('cashBalance').textContent = `₩${userCash.toLocaleString()}`;
-            
-            let portfolioValue = userCash;
-            Object.keys(portfolio).forEach(symbol => {
-                const stock = stocks.find(s => s.symbol === symbol);
-                portfolioValue += portfolio[symbol].quantity * stock.price;
+// 주가 업데이트 관리자 선정 (Firebase의 첫 번째 연결된 사용자)
+async function checkPriceUpdaterRole() {
+    if (!database) return;
+    
+    try {
+        const updaterRef = database.ref('system/priceUpdater');
+        
+        // 현재 업데이터 확인
+        const snapshot = await updaterRef.once('value');
+        const currentUpdater = snapshot.val();
+        
+        if (!currentUpdater) {
+            // 업데이터가 없으면 내가 업데이터가 됨
+            await updaterRef.set({
+                userId: currentUser,
+                timestamp: Date.now()
             });
-            
-            document.getElementById('totalBalance').textContent = `₩${portfolioValue.toLocaleString()}`;
-            
-            // 랭킹 업데이트
-            const profit = portfolioValue - 10000000;
-            leaderboard.find(l => l.name === 'You').profit = profit;
-            leaderboard.sort((a, b) => b.profit - a.profit);
-            renderLeaderboard();
-        }
-
-        // 포트폴리오 업데이트
-        function updatePortfolio() {
-            const container = document.getElementById('portfolioContainer');
-            
-            if (Object.keys(portfolio).length === 0) {
-                container.innerHTML = '<div style="text-align: center; color: var(--text-secondary); padding: 20px;">보유 종목이 없습니다</div>';
-                return;
-            }
-
-            container.innerHTML = Object.keys(portfolio).map(symbol => {
-                const holding = portfolio[symbol];
-                const stock = stocks.find(s => s.symbol === symbol);
-                const currentValue = holding.quantity * stock.price;
-                const costBasis = holding.quantity * holding.avgPrice;
-                const profitLoss = currentValue - costBasis;
-                const profitLossPercent = (profitLoss / costBasis) * 100;
-
-                return `
-                    <div class="portfolio-item">
-                        <div class="portfolio-header">
-                            <span class="portfolio-symbol">${symbol}</span>
-                            <span class="portfolio-pl ${profitLoss >= 0 ? 'up' : 'down'}" style="color: ${profitLoss >= 0 ? 'var(--accent-green)' : 'var(--accent-red)'}">
-                                ${profitLoss >= 0 ? '+' : ''}₩${profitLoss.toLocaleString()} (${profitLossPercent.toFixed(2)}%)
-                            </span>
-                        </div>
-                        <div class="portfolio-details">
-                            <span>${holding.quantity}주 보유</span>
-                            <span>평단 ₩${holding.avgPrice.toLocaleString()}</span>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        // 리더보드 렌더링
-        function renderLeaderboard() {
-            const container = document.getElementById('leaderboardContainer');
-            const userRank = leaderboard.findIndex(l => l.name === 'You') + 1;
-            document.getElementById('userRank').textContent = userRank;
-
-            container.innerHTML = leaderboard.map((user, index) => {
-                const rankClass = index === 0 ? 'first' : index === 1 ? 'second' : index === 2 ? 'third' : 'other';
-                return `
-                    <div class="leaderboard-item" style="${user.name === 'You' ? 'border-color: var(--accent-blue);' : ''}">
-                        <div class="rank-number ${rankClass}">${index + 1}</div>
-                        <div class="leaderboard-info">
-                            <div class="leaderboard-name">${user.name}${user.name === 'You' ? ' (나)' : ''}</div>
-                            <div class="leaderboard-profit" style="color: ${user.profit >= 0 ? 'var(--accent-green)' : 'var(--accent-red)'}">
-                                ${user.profit >= 0 ? '+' : ''}₩${user.profit.toLocaleString()}
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        // 가격 시뮬레이션 - 1분마다 -5% ~ +5% 변동
-        function startPriceSimulation() {
-            setInterval(() => {
-                stocks.forEach(stock => {
-                    // -5% ~ +5% 랜덤 변동
-                    const changePercent = (Math.random() * 10 - 5) / 100; // -0.05 ~ 0.05
-                    const oldPrice = stock.price;
-                    stock.price = Math.max(1000, stock.price * (1 + changePercent));
-                    stock.change = ((stock.price - oldPrice) / oldPrice) * 100;
+            isPriceUpdater = true;
+            console.log('✅ 주가 업데이트 담당자로 선정됨');
+            startPriceSimulation();
+        } else {
+            // 기존 업데이터가 30초 이상 응답 없으면 내가 대체
+            const timeDiff = Date.now() - currentUpdater.timestamp;
+            if (timeDiff > 30000) {
+                await updaterRef.set({
+                    userId: currentUser,
+                    timestamp: Date.now()
                 });
-                
-                renderStockList();
-                if (currentStock) {
-                    selectStock(stocks.find(s => s.symbol === currentStock.symbol));
-                }
-                updatePortfolio();
-                updateBalance();
-            }, 60000); // 60초 = 1분
-        }
-
-        // 계좌이체 모달
-        function openTransferModal() {
-            document.getElementById('transferModal').classList.add('active');
-        }
-
-        function closeTransferModal() {
-            document.getElementById('transferModal').classList.remove('active');
-        }
-
-        async function executeTransfer() {
-            const recipientId = document.getElementById('recipientId').value.trim();
-            const amount = parseInt(document.getElementById('transferAmount').value);
-
-            if (!recipientId) {
-                showToast('받는 사람 ID를 입력하세요!', 'error');
-                return;
-            }
-
-            if (recipientId === currentUser) {
-                showToast('자기 자신에게는 이체할 수 없습니다!', 'error');
-                return;
-            }
-
-            if (!database) {
-                showToast('Firebase 연결이 필요합니다!', 'error');
-                return;
-            }
-
-            if (!amount || amount < 1000) {
-                showToast('이체 금액은 최소 1,000원 이상이어야 합니다!', 'error');
-                return;
-            }
-
-            if (amount > userCash) {
-                showToast('현금이 부족합니다!', 'error');
-                return;
-            }
-
-            try {
-                // 받는 사람 존재 확인
-                const recipientSnapshot = await database.ref('users/' + recipientId).once('value');
-                if (!recipientSnapshot.exists()) {
-                    showToast('존재하지 않는 사용자입니다!', 'error');
-                    return;
-                }
-
-                const recipientData = recipientSnapshot.val();
-
-                // 보내는 사람 차감
-                userCash -= amount;
-                await saveUserData();
-
-                // 받는 사람 증가
-                await database.ref('users/' + recipientId).update({
-                    cash: (recipientData.cash || 10000000) + amount,
-                    lastUpdate: new Date().toISOString()
-                });
-
-                updateBalance();
-                closeTransferModal();
-                showToast(`${recipientId}님께 ₩${amount.toLocaleString()} 이체 완료!`, 'success');
-                
-                document.getElementById('recipientId').value = '';
-                document.getElementById('transferAmount').value = '';
-            } catch (error) {
-                console.error('이체 실패:', error);
-                showToast('이체 중 오류가 발생했습니다!', 'error');
-            }
-        }
-
-        // 토스트 알림
-        function showToast(message, type = 'success') {
-            const toast = document.getElementById('toast');
-            toast.textContent = message;
-            toast.style.borderColor = type === 'success' ? 'var(--accent-green)' : 'var(--accent-red)';
-            toast.style.boxShadow = type === 'success' ? '0 10px 40px var(--glow-green)' : '0 10px 40px var(--glow-red)';
-            toast.classList.add('active');
-            
-            setTimeout(() => {
-                toast.classList.remove('active');
-            }, 3000);
-        }
-
-        // 타임 프레임 선택
-        document.querySelectorAll('.time-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active'));
-                this.classList.add('active');
-                updateChart();
-            });
-        });
-
-        // 초기화 실행
-        init();
-
-        // 관리자 패널 토글 (비밀번호 확인)
-        function toggleAdmin() {
-            const panel = document.getElementById('adminPanel');
-            
-            if (panel.style.display === 'none') {
-                // 패널 열기 시 비밀번호 확인
-                const inputPassword = prompt('관리자 비밀번호를 입력하세요:');
-                
-                if (inputPassword === null) {
-                    return; // 취소 버튼
-                }
-                
-                if (inputPassword === ADMIN_PASSWORD) {
-                    panel.style.display = 'block';
-                    showToast('관리자 모드 활성화!', 'success');
-                } else {
-                    showToast('비밀번호가 올바르지 않습니다!', 'error');
-                }
+                isPriceUpdater = true;
+                console.log('✅ 주가 업데이트 담당자 대체 선정됨');
+                startPriceSimulation();
             } else {
-                // 패널 닫기
-                panel.style.display = 'none';
+                isPriceUpdater = false;
+                console.log('📊 주가 업데이트는 다른 사용자가 담당 중');
             }
         }
-
-        // 관리자 비밀번호 변경
-        function changeAdminPassword() {
-            const currentPassword = prompt('현재 비밀번호를 입력하세요:');
-            
-            if (currentPassword !== ADMIN_PASSWORD) {
-                showToast('현재 비밀번호가 올바르지 않습니다!', 'error');
-                return;
-            }
-            
-            const newPassword = prompt('새 비밀번호를 입력하세요:');
-            
-            if (!newPassword || newPassword.length < 4) {
-                showToast('비밀번호는 최소 4자 이상이어야 합니다!', 'error');
-                return;
-            }
-            
-            const confirmPassword = prompt('새 비밀번호를 다시 입력하세요:');
-            
-            if (newPassword !== confirmPassword) {
-                showToast('비밀번호가 일치하지 않습니다!', 'error');
-                return;
-            }
-            
-            ADMIN_PASSWORD = newPassword;
-            showToast('비밀번호가 변경되었습니다!', 'success');
+        
+        // 내가 업데이터면 5초마다 생존 신호 전송
+        if (isPriceUpdater) {
+            setInterval(async () => {
+                try {
+                    await updaterRef.update({
+                        timestamp: Date.now()
+                    });
+                } catch (error) {
+                    console.error('생존 신호 전송 실패:', error);
+                }
+            }, 5000);
         }
+    } catch (error) {
+        console.error('주가 업데이터 확인 실패:', error);
+    }
+}
 
-        // 관리자 주식 리스트 렌더링
-        function renderAdminStockList() {
-            const container = document.getElementById('adminStockList');
-            container.innerHTML = stocks.map(stock => `
-                <div class="stock-admin-item">
-                    <div>
-                        <div style="font-weight: 700; color: var(--accent-blue);">${stock.symbol}</div>
-                        <div style="font-size: 0.85rem; color: var(--text-secondary);">${stock.name} - ₩${stock.price.toLocaleString()}</div>
-                    </div>
-                    <button class="delete-stock-btn" onclick="deleteStock('${stock.symbol}')">삭제</button>
-                </div>
-            `).join('');
-        }
+// ============================================
+// 초기화 함수
+// ============================================
 
-        // 새 기업 추가
-        function addNewStock() {
-            const symbol = document.getElementById('newStockSymbol').value.trim();
-            const name = document.getElementById('newStockName').value.trim();
-            const price = parseInt(document.getElementById('newStockPrice').value) || 100000;
-            const sector = document.getElementById('newStockSector').value;
+async function init() {
+    // 로그인 체크
+    const savedUser = localStorage.getItem('fwb_currentUser');
+    if (savedUser && database) {
+        currentUser = savedUser;
+        await loadUserData();
+        document.getElementById('loginModal').style.display = 'none';
+    } else {
+        document.getElementById('loginModal').style.display = 'flex';
+        return;
+    }
 
-            if (!symbol || !name) {
-                showToast('심볼과 기업명을 입력해주세요!', 'error');
-                return;
-            }
+    // Firebase 실시간 구독 시작
+    subscribeToStocks();
+    subscribeToLeaderboard();
+    
+    // 주가 업데이트 담당자 확인
+    await checkPriceUpdaterRole();
+    
+    renderAdminStockList();
+}
 
-            if (stocks.find(s => s.symbol === symbol)) {
-                showToast('이미 존재하는 심볼입니다!', 'error');
-                return;
-            }
+// 사용자 데이터 로드
+async function loadUserData() {
+    if (!currentUser || !database) {
+        currentUser = null;
+        userCash = 10000000;
+        portfolio = {};
+        return;
+    }
 
-            stocks.push({
-                symbol: symbol,
-                name: name,
-                price: price,
-                change: 0,
-                sector: sector
-            });
-
-            renderStockList();
-            renderAdminStockList();
-            showToast(`${name} (${symbol}) 추가 완료!`, 'success');
-
-            // 입력 필드 초기화
-            document.getElementById('newStockSymbol').value = '';
-            document.getElementById('newStockName').value = '';
-            document.getElementById('newStockPrice').value = '100000';
-        }
-
-        // 기업 삭제
-        function deleteStock(symbol) {
-            if (stocks.length <= 1) {
-                showToast('최소 1개의 기업은 유지해야 합니다!', 'error');
-                return;
-            }
-
-            const index = stocks.findIndex(s => s.symbol === symbol);
-            if (index === -1) return;
-
-            const stockName = stocks[index].name;
-            
-            // 포트폴리오에서 해당 주식 보유 중이면 현금으로 환산
-            if (portfolio[symbol]) {
-                const refundAmount = portfolio[symbol].quantity * stocks[index].price;
-                userCash += refundAmount;
-                delete portfolio[symbol];
-                updateBalance();
-                updatePortfolio();
-            }
-
-            stocks.splice(index, 1);
-
-            // 현재 선택된 주식이 삭제되면 첫 번째 주식으로 전환
-            if (currentStock.symbol === symbol) {
-                selectStock(stocks[0]);
-            }
-
-            renderStockList();
-            renderAdminStockList();
-            showToast(`${stockName} 삭제 완료!`, 'success');
-        }
-
-        // 계좌 리셋
-        function resetAccount() {
-            if (!confirm('정말로 계좌를 리셋하시겠습니까? 모든 보유 주식이 사라지고 초기 자본금 1천만원으로 돌아갑니다.')) {
-                return;
-            }
-
+    try {
+        const snapshot = await database.ref('users/' + currentUser).once('value');
+        const userData = snapshot.val();
+        
+        if (!userData) {
             userCash = 10000000;
             portfolio = {};
-            updateBalance();
-            updatePortfolio();
-            saveUserData(); // 데이터 저장
-            showToast('계좌가 리셋되었습니다!', 'success');
+        } else {
+            userCash = userData.cash || 10000000;
+            portfolio = userData.portfolio || {};
         }
+        
+        document.getElementById('currentUserId').textContent = currentUser;
+        updateBalance();
+        updatePortfolio();
+    } catch (error) {
+        console.error('데이터 로드 실패:', error);
+        showToast('데이터 로드 중 오류가 발생했습니다!', 'error');
+    }
+}
+
+// 사용자 데이터 저장
+async function saveUserData() {
+    if (!currentUser || !database) return;
+
+    try {
+        await database.ref('users/' + currentUser).update({
+            cash: userCash,
+            portfolio: portfolio,
+            lastUpdate: new Date().toISOString()
+        });
+    } catch (error) {
+        console.error('데이터 저장 실패:', error);
+        showToast('데이터 저장 중 오류가 발생했습니다!', 'error');
+    }
+}
+
+// 로그인
+async function loginUser() {
+    const userId = document.getElementById('loginUserId').value.trim();
+    const password = document.getElementById('loginPassword').value;
+
+    console.log('=== 로그인 시도 ===');
+    console.log('입력된 ID:', userId);
+    console.log('database 연결 상태:', database ? '연결됨' : '연결 안됨');
+
+    if (!userId || !password) {
+        showToast('ID와 비밀번호를 입력하세요!', 'error');
+        return;
+    }
+
+    if (!database) {
+        showToast('Firebase 연결이 필요합니다!', 'error');
+        console.error('Firebase database가 초기화되지 않았습니다!');
+        return;
+    }
+
+    try {
+        console.log('사용자 정보 확인 중...');
+        
+        const snapshot = await database.ref('users/' + userId).once('value');
+        const userData = snapshot.val();
+
+        console.log('사용자 데이터 조회 완료:', userData ? '존재함' : '존재하지 않음');
+
+        if (!userData) {
+            showToast('존재하지 않는 사용자입니다!', 'error');
+            return;
+        }
+
+        if (userData.password !== password) {
+            showToast('비밀번호가 올바르지 않습니다!', 'error');
+            return;
+        }
+
+        console.log('로그인 성공!');
+        currentUser = userId;
+        localStorage.setItem('fwb_currentUser', userId);
+        await loadUserData();
+        
+        document.getElementById('loginModal').style.display = 'none';
+        document.getElementById('loginUserId').value = '';
+        document.getElementById('loginPassword').value = '';
+        
+        // Firebase 실시간 구독 시작
+        subscribeToStocks();
+        subscribeToLeaderboard();
+        
+        // 주가 업데이트 담당자 확인
+        await checkPriceUpdaterRole();
+        
+        renderAdminStockList();
+        
+        showToast(`환영합니다, ${userId}님!`, 'success');
+    } catch (error) {
+        console.error('=== 로그인 실패 상세 정보 ===');
+        console.error('에러 메시지:', error.message);
+        console.error('에러 코드:', error.code);
+        console.error('전체 에러:', error);
+        
+        let errorMessage = '로그인 중 오류가 발생했습니다!';
+        
+        if (error.code === 'PERMISSION_DENIED') {
+            errorMessage = '⚠️ Firebase 권한 오류! 데이터베이스 규칙을 확인해주세요.';
+            alert(errorMessage + '\n\nFirebase Console > Realtime Database > 규칙에서\n읽기/쓰기 권한을 true로 설정해주세요.');
+        }
+        
+        showToast(errorMessage, 'error');
+    }
+}
+
+// 회원가입
+async function signupUser() {
+    const userId = document.getElementById('signupUserId').value.trim();
+    const password = document.getElementById('signupPassword').value;
+    const passwordConfirm = document.getElementById('signupPasswordConfirm').value;
+
+    console.log('=== 회원가입 시도 ===');
+    console.log('입력된 ID:', userId);
+    console.log('비밀번호 길이:', password.length);
+    console.log('database 연결 상태:', database ? '연결됨' : '연결 안됨');
+
+    if (!userId || userId.length < 4) {
+        showToast('ID는 4자 이상이어야 합니다!', 'error');
+        return;
+    }
+
+    if (!password || password.length < 4) {
+        showToast('비밀번호는 4자 이상이어야 합니다!', 'error');
+        return;
+    }
+
+    if (password !== passwordConfirm) {
+        showToast('비밀번호가 일치하지 않습니다!', 'error');
+        return;
+    }
+
+    if (!database) {
+        showToast('Firebase 연결이 필요합니다!', 'error');
+        console.error('Firebase database가 초기화되지 않았습니다!');
+        return;
+    }
+
+    try {
+        console.log('Firebase 데이터베이스 확인 중...');
+        
+        // 사용자 존재 여부 확인
+        const snapshot = await database.ref('users/' + userId).once('value');
+        console.log('사용자 존재 여부 확인 완료');
+        
+        if (snapshot.exists()) {
+            showToast('이미 존재하는 ID입니다!', 'error');
+            console.log('이미 존재하는 사용자:', userId);
+            return;
+        }
+
+        console.log('새 사용자 생성 중...');
+        
+        // 새 사용자 생성
+        await database.ref('users/' + userId).set({
+            password: password,
+            cash: 10000000,
+            portfolio: {},
+            createdAt: new Date().toISOString()
+        });
+
+        console.log('회원가입 성공!');
+        showToast('회원가입 성공! 로그인해주세요.', 'success');
+        
+        document.getElementById('signupUserId').value = '';
+        document.getElementById('signupPassword').value = '';
+        document.getElementById('signupPasswordConfirm').value = '';
+        
+        switchToLogin();
+    } catch (error) {
+        console.error('=== 회원가입 실패 상세 정보 ===');
+        console.error('에러 메시지:', error.message);
+        console.error('에러 코드:', error.code);
+        console.error('전체 에러:', error);
+        
+        let errorMessage = '회원가입 중 오류가 발생했습니다!';
+        
+        // 일반적인 Firebase 에러 해석
+        if (error.code === 'PERMISSION_DENIED') {
+            errorMessage = '⚠️ Firebase 권한 설정 오류!\n\nFirebase Console에서:\n1. Realtime Database > 규칙 탭\n2. 다음으로 변경:\n{\n  "rules": {\n    ".read": true,\n    ".write": true\n  }\n}\n3. 게시 버튼 클릭';
+            alert(errorMessage);
+        } else if (error.message) {
+            errorMessage = `오류: ${error.message}`;
+        }
+        
+        showToast(errorMessage, 'error');
+    }
+}
+
+// 로그아웃
+function logout() {
+    if (!confirm('로그아웃 하시겠습니까?')) return;
+
+    saveUserData();
+    
+    // 주가 업데이트 담당자였다면 해제
+    if (isPriceUpdater && database) {
+        database.ref('system/priceUpdater').remove();
+        if (priceUpdateInterval) {
+            clearInterval(priceUpdateInterval);
+        }
+    }
+    
+    currentUser = null;
+    localStorage.removeItem('fwb_currentUser');
+    location.reload();
+}
+
+// 로그인/회원가입 화면 전환
+function switchToSignup() {
+    document.getElementById('loginForm').style.display = 'none';
+    document.getElementById('signupForm').style.display = 'block';
+    document.getElementById('authTitle').textContent = '회원가입';
+}
+
+function switchToLogin() {
+    document.getElementById('signupForm').style.display = 'none';
+    document.getElementById('loginForm').style.display = 'block';
+    document.getElementById('authTitle').textContent = '로그인';
+}
+
+// 주식 리스트 렌더링
+function renderStockList() {
+    const container = document.getElementById('stockListContainer');
+    if (!stocks || stocks.length === 0) {
+        container.innerHTML = '<div style="text-align: center; color: var(--text-secondary); padding: 20px;">주식 데이터 로딩 중...</div>';
+        return;
+    }
+    
+    container.innerHTML = stocks.map(stock => `
+        <div class="stock-item ${currentStock && stock.symbol === currentStock.symbol ? 'active' : ''}" 
+             onclick="selectStock(${JSON.stringify(stock).replace(/"/g, '&quot;')})">
+            <div class="stock-symbol">${stock.symbol}</div>
+            <div class="stock-name">${stock.name}</div>
+            <div class="stock-price-info">
+                <span class="stock-price">₩${stock.price.toLocaleString()}</span>
+                <span class="stock-change ${stock.change >= 0 ? 'up' : 'down'}">
+                    ${stock.change >= 0 ? '+' : ''}${stock.change.toFixed(2)}%
+                </span>
+            </div>
+        </div>
+    `).join('');
+}
+
+// 주식 선택
+function selectStock(stock) {
+    currentStock = stock;
+    document.getElementById('chartSymbol').textContent = stock.symbol;
+    document.getElementById('chartPrice').textContent = `₩${stock.price.toLocaleString()}`;
+    document.getElementById('chartChange').textContent = 
+        `${stock.change >= 0 ? '+' : ''}${(stock.price * stock.change / 100).toLocaleString()} (${stock.change >= 0 ? '+' : ''}${stock.change.toFixed(2)}%)`;
+    document.getElementById('chartChange').className = `price-change ${stock.change >= 0 ? 'up' : 'down'}`;
+    document.getElementById('tradePrice').value = stock.price;
+    
+    renderStockList();
+    updateChart();
+    updateTradeSummary();
+}
+
+// 차트 업데이트
+function updateChart() {
+    if (!currentStock) return;
+    
+    const canvas = document.getElementById('chartCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    // 타임프레임에 따른 데이터 포인트 수 결정
+    const activeTimeBtn = document.querySelector('.time-btn.active');
+    const timeRange = activeTimeBtn ? activeTimeBtn.getAttribute('data-range') : '1M';
+    
+    let dataPoints;
+    switch(timeRange) {
+        case '1M': dataPoints = 60; break;
+        case '30M': dataPoints = 30; break;
+        case '1H': dataPoints = 60; break;
+        case '1D': dataPoints = 24; break;
+        case '1MO': dataPoints = 30; break;
+        default: dataPoints = 60;
+    }
+    
+    const labels = Array.from({length: dataPoints}, (_, i) => i);
+    const basePrice = currentStock.price;
+    const data = Array.from({length: dataPoints}, (_, i) => {
+        const volatility = basePrice * 0.05;
+        const trend = (currentStock.change / 100) * basePrice * (i / dataPoints);
+        return basePrice + trend + (Math.random() - 0.5) * volatility;
+    });
+
+    if (chartInstance) {
+        chartInstance.destroy();
+    }
+
+    chartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: currentStock.symbol,
+                data: data,
+                borderColor: currentStock.change >= 0 ? '#00ff88' : '#ff3366',
+                backgroundColor: currentStock.change >= 0 ? 
+                    'rgba(0, 255, 136, 0.1)' : 'rgba(255, 51, 102, 0.1)',
+                borderWidth: 2,
+                tension: 0.4,
+                fill: true,
+                pointRadius: 0,
+                pointHoverRadius: 5,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: '#1a2234',
+                    titleColor: '#00d4ff',
+                    bodyColor: '#e8edf4',
+                    borderColor: '#2a3547',
+                    borderWidth: 1,
+                    callbacks: {
+                        label: (context) => `₩${context.parsed.y.toLocaleString()}`
+                    }
+                }
+            },
+            scales: {
+                x: { display: false },
+                y: {
+                    grid: { color: '#2a3547' },
+                    ticks: {
+                        color: '#8b95a8',
+                        callback: (value) => `₩${value.toLocaleString()}`
+                    }
+                }
+            }
+        }
+    });
+}
+
+// 탭 전환
+function switchTab(mode) {
+    tradeMode = mode;
+    document.querySelectorAll('.trade-tab').forEach(tab => tab.classList.remove('active'));
+    document.querySelector(`.trade-tab.${mode}`).classList.add('active');
+    
+    const btn = document.getElementById('executeBtn');
+    btn.className = `execute-btn ${mode}`;
+    btn.textContent = mode === 'buy' ? '매수 주문' : '매도 주문';
+    
+    updateTradeSummary();
+}
+
+// 거래 요약 업데이트
+function updateTradeSummary() {
+    if (!currentStock) return;
+    
+    const quantity = parseInt(document.getElementById('tradeQuantity').value) || 0;
+    const price = currentStock.price;
+    const total = quantity * price;
+
+    document.getElementById('summaryQuantity').textContent = `${quantity} 주`;
+    document.getElementById('summaryPrice').textContent = `₩${price.toLocaleString()}`;
+    document.getElementById('summaryTotal').textContent = `₩${total.toLocaleString()}`;
+}
+
+document.getElementById('tradeQuantity').addEventListener('input', updateTradeSummary);
+
+// 거래 실행
+function executeTrade() {
+    if (!currentStock) return;
+    
+    const quantity = parseInt(document.getElementById('tradeQuantity').value);
+    const price = currentStock.price;
+    const total = quantity * price;
+
+    if (tradeMode === 'buy') {
+        if (total > userCash) {
+            showToast('현금이 부족합니다!', 'error');
+            return;
+        }
+        
+        userCash -= total;
+        if (!portfolio[currentStock.symbol]) {
+            portfolio[currentStock.symbol] = {
+                name: currentStock.name,
+                quantity: 0,
+                avgPrice: 0
+            };
+        }
+        
+        const holding = portfolio[currentStock.symbol];
+        holding.avgPrice = ((holding.avgPrice * holding.quantity) + total) / (holding.quantity + quantity);
+        holding.quantity += quantity;
+        
+        showToast(`${currentStock.symbol} ${quantity}주 매수 완료!`, 'success');
+    } else {
+        if (!portfolio[currentStock.symbol] || portfolio[currentStock.symbol].quantity < quantity) {
+            showToast('보유 수량이 부족합니다!', 'error');
+            return;
+        }
+        
+        userCash += total;
+        portfolio[currentStock.symbol].quantity -= quantity;
+        
+        if (portfolio[currentStock.symbol].quantity === 0) {
+            delete portfolio[currentStock.symbol];
+        }
+        
+        showToast(`${currentStock.symbol} ${quantity}주 매도 완료!`, 'success');
+    }
+
+    updateBalance();
+    updatePortfolio();
+    saveUserData();
+    document.getElementById('tradeQuantity').value = 1;
+    updateTradeSummary();
+}
+
+// 잔액 업데이트
+function updateBalance() {
+    document.getElementById('cashBalance').textContent = `₩${userCash.toLocaleString()}`;
+    
+    let portfolioValue = userCash;
+    Object.keys(portfolio).forEach(symbol => {
+        const stock = stocks.find(s => s.symbol === symbol);
+        if (stock) {
+            portfolioValue += portfolio[symbol].quantity * stock.price;
+        }
+    });
+    
+    document.getElementById('totalBalance').textContent = `₩${portfolioValue.toLocaleString()}`;
+}
+
+// 포트폴리오 업데이트
+function updatePortfolio() {
+    const container = document.getElementById('portfolioContainer');
+    
+    if (Object.keys(portfolio).length === 0) {
+        container.innerHTML = '<div style="text-align: center; color: var(--text-secondary); padding: 20px;">보유 종목이 없습니다</div>';
+        return;
+    }
+
+    container.innerHTML = Object.keys(portfolio).map(symbol => {
+        const holding = portfolio[symbol];
+        const stock = stocks.find(s => s.symbol === symbol);
+        if (!stock) return '';
+        
+        const currentValue = holding.quantity * stock.price;
+        const costBasis = holding.quantity * holding.avgPrice;
+        const profitLoss = currentValue - costBasis;
+        const profitLossPercent = (profitLoss / costBasis) * 100;
+
+        return `
+            <div class="portfolio-item">
+                <div class="portfolio-header">
+                    <span class="portfolio-symbol">${symbol}</span>
+                    <span class="portfolio-pl ${profitLoss >= 0 ? 'up' : 'down'}" style="color: ${profitLoss >= 0 ? 'var(--accent-green)' : 'var(--accent-red)'}">
+                        ${profitLoss >= 0 ? '+' : ''}₩${profitLoss.toLocaleString()} (${profitLossPercent.toFixed(2)}%)
+                    </span>
+                </div>
+                <div class="portfolio-details">
+                    <span>${holding.quantity}주 보유</span>
+                    <span>평단 ₩${holding.avgPrice.toLocaleString()}</span>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+// 리더보드 렌더링
+function renderLeaderboard() {
+    const container = document.getElementById('leaderboardContainer');
+    
+    if (!leaderboard || leaderboard.length === 0) {
+        container.innerHTML = '<div style="text-align: center; color: var(--text-secondary); padding: 20px;">랭킹 데이터 로딩 중...</div>';
+        document.getElementById('userRank').textContent = '-';
+        return;
+    }
+    
+    const userRank = leaderboard.findIndex(l => l.isCurrentUser) + 1;
+    document.getElementById('userRank').textContent = userRank || '-';
+
+    container.innerHTML = leaderboard.slice(0, 10).map((user, index) => {
+        const rankClass = index === 0 ? 'first' : index === 1 ? 'second' : index === 2 ? 'third' : 'other';
+        return `
+            <div class="leaderboard-item" style="${user.isCurrentUser ? 'border-color: var(--accent-blue);' : ''}">
+                <div class="rank-number ${rankClass}">${index + 1}</div>
+                <div class="leaderboard-info">
+                    <div class="leaderboard-name">${user.name}${user.isCurrentUser ? ' (나)' : ''}</div>
+                    <div class="leaderboard-profit" style="color: ${user.profit >= 0 ? 'var(--accent-green)' : 'var(--accent-red)'}">
+                        ${user.profit >= 0 ? '+' : ''}₩${user.profit.toLocaleString()}
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+// 가격 시뮬레이션 - Firebase에 저장 (담당자만 실행)
+function startPriceSimulation() {
+    if (!isPriceUpdater || !database) return;
+    
+    console.log('🚀 주가 시뮬레이션 시작 (1분마다 업데이트)');
+    
+    // 기존 인터벌 제거
+    if (priceUpdateInterval) {
+        clearInterval(priceUpdateInterval);
+    }
+    
+    priceUpdateInterval = setInterval(async () => {
+        if (!isPriceUpdater) {
+            clearInterval(priceUpdateInterval);
+            return;
+        }
+        
+        try {
+            const updates = {};
+            
+            stocks.forEach(stock => {
+                // -5% ~ +5% 랜덤 변동
+                const changePercent = (Math.random() * 10 - 5) / 100;
+                const oldPrice = stock.price;
+                const newPrice = Math.max(1000, stock.price * (1 + changePercent));
+                const change = ((newPrice - oldPrice) / oldPrice) * 100;
+                
+                updates[`stocks/${stock.symbol}/price`] = Math.round(newPrice);
+                updates[`stocks/${stock.symbol}/change`] = parseFloat(change.toFixed(2));
+            });
+            
+            // Firebase에 한 번에 업데이트
+            await database.ref().update(updates);
+            console.log('📈 주가 업데이트 완료');
+            
+        } catch (error) {
+            console.error('주가 업데이트 실패:', error);
+        }
+    }, 60000); // 60초 = 1분
+}
+
+// 계좌이체 모달
+function openTransferModal() {
+    document.getElementById('transferModal').classList.add('active');
+}
+
+function closeTransferModal() {
+    document.getElementById('transferModal').classList.remove('active');
+}
+
+async function executeTransfer() {
+    const recipientId = document.getElementById('recipientId').value.trim();
+    const amount = parseInt(document.getElementById('transferAmount').value);
+
+    if (!recipientId) {
+        showToast('받는 사람 ID를 입력하세요!', 'error');
+        return;
+    }
+
+    if (recipientId === currentUser) {
+        showToast('자기 자신에게는 이체할 수 없습니다!', 'error');
+        return;
+    }
+
+    if (!database) {
+        showToast('Firebase 연결이 필요합니다!', 'error');
+        return;
+    }
+
+    if (!amount || amount < 1000) {
+        showToast('이체 금액은 최소 1,000원 이상이어야 합니다!', 'error');
+        return;
+    }
+
+    if (amount > userCash) {
+        showToast('현금이 부족합니다!', 'error');
+        return;
+    }
+
+    try {
+        // 받는 사람 존재 확인
+        const recipientSnapshot = await database.ref('users/' + recipientId).once('value');
+        if (!recipientSnapshot.exists()) {
+            showToast('존재하지 않는 사용자입니다!', 'error');
+            return;
+        }
+
+        const recipientData = recipientSnapshot.val();
+
+        // 보내는 사람 차감
+        userCash -= amount;
+        await saveUserData();
+
+        // 받는 사람 증가
+        await database.ref('users/' + recipientId).update({
+            cash: (recipientData.cash || 10000000) + amount,
+            lastUpdate: new Date().toISOString()
+        });
+
+        updateBalance();
+        closeTransferModal();
+        showToast(`${recipientId}님께 ₩${amount.toLocaleString()} 이체 완료!`, 'success');
+        
+        document.getElementById('recipientId').value = '';
+        document.getElementById('transferAmount').value = '';
+    } catch (error) {
+        console.error('이체 실패:', error);
+        showToast('이체 중 오류가 발생했습니다!', 'error');
+    }
+}
+
+// 토스트 알림
+function showToast(message, type = 'success') {
+    const toast = document.getElementById('toast');
+    toast.textContent = message;
+    toast.style.borderColor = type === 'success' ? 'var(--accent-green)' : 'var(--accent-red)';
+    toast.style.boxShadow = type === 'success' ? '0 10px 40px var(--glow-green)' : '0 10px 40px var(--glow-red)';
+    toast.classList.add('active');
+    
+    setTimeout(() => {
+        toast.classList.remove('active');
+    }, 3000);
+}
+
+// 타임 프레임 선택
+document.querySelectorAll('.time-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        updateChart();
+    });
+});
+
+// ============================================
+// 관리자 기능 (Firebase 동기화)
+// ============================================
+
+// 관리자 패널 토글
+function toggleAdmin() {
+    const panel = document.getElementById('adminPanel');
+    
+    if (panel.style.display === 'none') {
+        const inputPassword = prompt('관리자 비밀번호를 입력하세요:');
+        
+        if (inputPassword === null) {
+            return;
+        }
+        
+        if (inputPassword === ADMIN_PASSWORD) {
+            panel.style.display = 'block';
+            showToast('관리자 모드 활성화!', 'success');
+        } else {
+            showToast('비밀번호가 올바르지 않습니다!', 'error');
+        }
+    } else {
+        panel.style.display = 'none';
+    }
+}
+
+// 관리자 비밀번호 변경
+function changeAdminPassword() {
+    const currentPassword = prompt('현재 비밀번호를 입력하세요:');
+    
+    if (currentPassword !== ADMIN_PASSWORD) {
+        showToast('현재 비밀번호가 올바르지 않습니다!', 'error');
+        return;
+    }
+    
+    const newPassword = prompt('새 비밀번호를 입력하세요:');
+    
+    if (!newPassword || newPassword.length < 4) {
+        showToast('비밀번호는 최소 4자 이상이어야 합니다!', 'error');
+        return;
+    }
+    
+    const confirmPassword = prompt('새 비밀번호를 다시 입력하세요:');
+    
+    if (newPassword !== confirmPassword) {
+        showToast('비밀번호가 일치하지 않습니다!', 'error');
+        return;
+    }
+    
+    ADMIN_PASSWORD = newPassword;
+    showToast('비밀번호가 변경되었습니다!', 'success');
+}
+
+// 관리자 주식 리스트 렌더링
+function renderAdminStockList() {
+    const container = document.getElementById('adminStockList');
+    if (!stocks || stocks.length === 0) {
+        container.innerHTML = '<div style="text-align: center; color: var(--text-secondary); padding: 12px;">주식 데이터 로딩 중...</div>';
+        return;
+    }
+    
+    container.innerHTML = stocks.map(stock => `
+        <div class="stock-admin-item">
+            <div>
+                <div style="font-weight: 700; color: var(--accent-blue);">${stock.symbol}</div>
+                <div style="font-size: 0.85rem; color: var(--text-secondary);">${stock.name} - ₩${stock.price.toLocaleString()}</div>
+            </div>
+            <button class="delete-stock-btn" onclick="deleteStock('${stock.symbol}')">삭제</button>
+        </div>
+    `).join('');
+}
+
+// 새 기업 추가 (Firebase에 저장)
+async function addNewStock() {
+    const symbol = document.getElementById('newStockSymbol').value.trim();
+    const name = document.getElementById('newStockName').value.trim();
+    const price = parseInt(document.getElementById('newStockPrice').value) || 100000;
+    const sector = document.getElementById('newStockSector').value;
+
+    if (!symbol || !name) {
+        showToast('심볼과 기업명을 입력해주세요!', 'error');
+        return;
+    }
+
+    if (stocks.find(s => s.symbol === symbol)) {
+        showToast('이미 존재하는 심볼입니다!', 'error');
+        return;
+    }
+
+    if (!database) {
+        showToast('Firebase 연결이 필요합니다!', 'error');
+        return;
+    }
+
+    try {
+        await database.ref('stocks/' + symbol).set({
+            symbol: symbol,
+            name: name,
+            price: price,
+            change: 0,
+            sector: sector
+        });
+
+        showToast(`${name} (${symbol}) 추가 완료!`, 'success');
+
+        // 입력 필드 초기화
+        document.getElementById('newStockSymbol').value = '';
+        document.getElementById('newStockName').value = '';
+        document.getElementById('newStockPrice').value = '100000';
+    } catch (error) {
+        console.error('기업 추가 실패:', error);
+        showToast('기업 추가 중 오류가 발생했습니다!', 'error');
+    }
+}
+
+// 기업 삭제 (Firebase에서 삭제)
+async function deleteStock(symbol) {
+    if (stocks.length <= 1) {
+        showToast('최소 1개의 기업은 유지해야 합니다!', 'error');
+        return;
+    }
+
+    const stock = stocks.find(s => s.symbol === symbol);
+    if (!stock) return;
+
+    if (!confirm(`정말로 ${stock.name} (${symbol})을 삭제하시겠습니까?\n\n모든 사용자의 포트폴리오에서 해당 주식이 현금으로 환산됩니다.`)) {
+        return;
+    }
+
+    if (!database) {
+        showToast('Firebase 연결이 필요합니다!', 'error');
+        return;
+    }
+
+    try {
+        // 모든 사용자의 포트폴리오 확인 및 환산
+        const usersSnapshot = await database.ref('users').once('value');
+        const usersData = usersSnapshot.val();
+        
+        if (usersData) {
+            for (const userId in usersData) {
+                const userData = usersData[userId];
+                if (userData.portfolio && userData.portfolio[symbol]) {
+                    const refundAmount = userData.portfolio[symbol].quantity * stock.price;
+                    const newCash = (userData.cash || 10000000) + refundAmount;
+                    
+                    // 포트폴리오에서 제거
+                    delete userData.portfolio[symbol];
+                    
+                    await database.ref('users/' + userId).update({
+                        cash: newCash,
+                        portfolio: userData.portfolio
+                    });
+                }
+            }
+        }
+        
+        // Firebase에서 주식 삭제
+        await database.ref('stocks/' + symbol).remove();
+        
+        showToast(`${stock.name} 삭제 완료!`, 'success');
+        
+        // 현재 선택된 주식이 삭제되면 첫 번째 주식으로 전환
+        if (currentStock && currentStock.symbol === symbol && stocks.length > 1) {
+            const remainingStocks = stocks.filter(s => s.symbol !== symbol);
+            if (remainingStocks.length > 0) {
+                selectStock(remainingStocks[0]);
+            }
+        }
+    } catch (error) {
+        console.error('기업 삭제 실패:', error);
+        showToast('기업 삭제 중 오류가 발생했습니다!', 'error');
+    }
+}
+
+// 계좌 리셋
+function resetAccount() {
+    if (!confirm('정말로 계좌를 리셋하시겠습니까? 모든 보유 주식이 사라지고 초기 자본금 1천만원으로 돌아갑니다.')) {
+        return;
+    }
+
+    userCash = 10000000;
+    portfolio = {};
+    updateBalance();
+    updatePortfolio();
+    saveUserData();
+    showToast('계좌가 리셋되었습니다!', 'success');
+}
+
+// 초기화 실행
+init();
     </script>
 </body>
 </html>
