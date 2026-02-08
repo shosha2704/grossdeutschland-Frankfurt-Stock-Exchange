@@ -1,0 +1,1853 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Frankfurter Wertpapierbörse - 모의주식 플랫폼</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0a0e1a;
+            --bg-secondary: #121826;
+            --bg-tertiary: #1a2234;
+            --accent-green: #00ff88;
+            --accent-red: #ff3366;
+            --accent-blue: #00d4ff;
+            --accent-purple: #a855f7;
+            --text-primary: #e8edf4;
+            --text-secondary: #8b95a8;
+            --border-color: #2a3547;
+            --glow-green: rgba(0, 255, 136, 0.3);
+            --glow-red: rgba(255, 51, 102, 0.3);
+            --glow-blue: rgba(0, 212, 255, 0.3);
+        }
+
+        body {
+            font-family: 'JetBrains Mono', monospace;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        /* Animated Background Grid */
+        .bg-grid {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(42, 53, 71, 0.3) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(42, 53, 71, 0.3) 1px, transparent 1px);
+            background-size: 50px 50px;
+            animation: gridMove 20s linear infinite;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        @keyframes gridMove {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(50px, 50px); }
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 30px 0;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 30px;
+            animation: slideDown 0.8s ease;
+        }
+
+        @keyframes slideDown {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .logo {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 900;
+            color: var(--text-primary);
+            letter-spacing: 2px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logo-eagle {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            object-fit: cover;
+            filter: brightness(1.1) contrast(1.05);
+            border: 2px solid var(--accent-blue);
+            box-shadow: 0 0 15px var(--glow-blue);
+        }
+
+        .user-info {
+            display: flex;
+            gap: 30px;
+            align-items: center;
+        }
+
+        .balance {
+            text-align: right;
+        }
+
+        .balance-label {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .balance-amount {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent-green);
+            text-shadow: 0 0 20px var(--glow-green);
+        }
+
+        .rank-badge {
+            background: linear-gradient(135deg, var(--accent-purple), var(--accent-blue));
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            box-shadow: 0 0 20px var(--glow-blue);
+        }
+
+        /* Main Grid Layout */
+        .dashboard {
+            display: grid;
+            grid-template-columns: 300px 1fr 350px;
+            gap: 20px;
+            animation: fadeIn 1s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Stock List Panel */
+        .stock-list {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            height: fit-content;
+            max-height: calc(100vh - 200px);
+            overflow-y: auto;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+
+        .panel-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.9rem;
+            color: var(--accent-blue);
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            border-bottom: 2px solid var(--accent-blue);
+            padding-bottom: 10px;
+        }
+
+        .stock-item {
+            padding: 15px;
+            margin-bottom: 10px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stock-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, var(--glow-blue), transparent);
+            transition: left 0.5s;
+        }
+
+        .stock-item:hover::before {
+            left: 100%;
+        }
+
+        .stock-item:hover {
+            border-color: var(--accent-blue);
+            transform: translateX(5px);
+            box-shadow: -5px 0 15px var(--glow-blue);
+        }
+
+        .stock-item.active {
+            border-color: var(--accent-green);
+            background: linear-gradient(90deg, var(--bg-tertiary), rgba(0, 255, 136, 0.1));
+        }
+
+        .stock-symbol {
+            font-weight: 700;
+            font-size: 1rem;
+            color: var(--accent-blue);
+            margin-bottom: 5px;
+        }
+
+        .stock-name {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .stock-price-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .stock-price {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .stock-change {
+            font-size: 0.85rem;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        .stock-change.up {
+            color: var(--accent-green);
+            background: rgba(0, 255, 136, 0.1);
+        }
+
+        .stock-change.down {
+            color: var(--accent-red);
+            background: rgba(255, 51, 102, 0.1);
+        }
+
+        /* Main Chart Area */
+        .chart-area {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .chart-stock-info h2 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.8rem;
+            color: var(--accent-blue);
+            margin-bottom: 5px;
+        }
+
+        .chart-stock-info .current-price {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .chart-stock-info .price-change {
+            font-size: 1.2rem;
+            margin-top: 5px;
+        }
+
+        .time-selector {
+            display: flex;
+            gap: 10px;
+        }
+
+        .time-btn {
+            padding: 8px 16px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .time-btn:hover, .time-btn.active {
+            background: var(--accent-blue);
+            color: var(--bg-primary);
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 15px var(--glow-blue);
+        }
+
+        #stockChart {
+            width: 100%;
+            height: 400px;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            margin: 20px 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .chart-canvas {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Trading Panel */
+        .trading-panel {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+
+        .trade-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .trade-tab {
+            flex: 1;
+            padding: 12px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 0.85rem;
+        }
+
+        .trade-tab.buy:hover, .trade-tab.buy.active {
+            background: var(--accent-green);
+            color: var(--bg-primary);
+            border-color: var(--accent-green);
+            box-shadow: 0 0 20px var(--glow-green);
+        }
+
+        .trade-tab.sell:hover, .trade-tab.sell.active {
+            background: var(--accent-red);
+            color: var(--bg-primary);
+            border-color: var(--accent-red);
+            box-shadow: 0 0 20px var(--glow-red);
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-label {
+            display: block;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 14px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 15px var(--glow-blue);
+        }
+
+        .trade-summary {
+            background: var(--bg-tertiary);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border-color);
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+        }
+
+        .summary-row:last-child {
+            margin-bottom: 0;
+            padding-top: 10px;
+            border-top: 1px solid var(--border-color);
+            font-weight: 700;
+        }
+
+        .execute-btn {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 8px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .execute-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .execute-btn:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .execute-btn.buy {
+            background: var(--accent-green);
+            color: var(--bg-primary);
+            box-shadow: 0 5px 20px var(--glow-green);
+        }
+
+        .execute-btn.buy:hover {
+            box-shadow: 0 8px 30px var(--glow-green);
+            transform: translateY(-2px);
+        }
+
+        .execute-btn.sell {
+            background: var(--accent-red);
+            color: var(--bg-primary);
+            box-shadow: 0 5px 20px var(--glow-red);
+        }
+
+        .execute-btn.sell:hover {
+            box-shadow: 0 8px 30px var(--glow-red);
+            transform: translateY(-2px);
+        }
+
+        .portfolio-section {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .portfolio-item {
+            background: var(--bg-tertiary);
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            border: 1px solid var(--border-color);
+        }
+
+        .portfolio-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .portfolio-symbol {
+            font-weight: 700;
+            color: var(--accent-blue);
+        }
+
+        .portfolio-pl {
+            font-weight: 600;
+        }
+
+        .portfolio-details {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        /* Leaderboard Section */
+        .leaderboard {
+            margin-top: 30px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+
+        .leaderboard-item {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            margin-bottom: 10px;
+            transition: all 0.3s;
+        }
+
+        .leaderboard-item:hover {
+            border-color: var(--accent-purple);
+            transform: translateX(5px);
+        }
+
+        .rank-number {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.2rem;
+            margin-right: 15px;
+            border-radius: 50%;
+        }
+
+        .rank-number.first {
+            background: linear-gradient(135deg, #ffd700, #ffed4e);
+            color: var(--bg-primary);
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+        }
+
+        .rank-number.second {
+            background: linear-gradient(135deg, #c0c0c0, #e8e8e8);
+            color: var(--bg-primary);
+        }
+
+        .rank-number.third {
+            background: linear-gradient(135deg, #cd7f32, #ffb347);
+            color: var(--bg-primary);
+        }
+
+        .rank-number.other {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+        }
+
+        .leaderboard-info {
+            flex: 1;
+        }
+
+        .leaderboard-name {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .leaderboard-profit {
+            font-size: 0.85rem;
+        }
+
+        /* Transfer Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+            animation: modalSlide 0.3s ease;
+        }
+
+        @keyframes modalSlide {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-header {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            color: var(--accent-blue);
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .modal-close:hover {
+            color: var(--accent-red);
+            transform: rotate(90deg);
+        }
+
+        .transfer-btn {
+            padding: 12px 24px;
+            background: var(--accent-purple);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-left: 10px;
+        }
+
+        .transfer-btn:hover {
+            box-shadow: 0 5px 20px var(--glow-blue);
+            transform: translateY(-2px);
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-tertiary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--accent-blue);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--accent-purple);
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+            
+            .stock-list {
+                max-height: 400px;
+            }
+        }
+
+        /* Admin Panel */
+        .admin-panel {
+            background: var(--bg-secondary);
+            border: 1px solid var(--accent-purple);
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 30px;
+            box-shadow: 0 8px 32px rgba(168, 85, 247, 0.3);
+        }
+
+        .admin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .admin-btn {
+            padding: 10px 20px;
+            background: var(--accent-purple);
+            border: none;
+            border-radius: 6px;
+            color: white;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.85rem;
+        }
+
+        .admin-btn:hover {
+            box-shadow: 0 5px 20px rgba(168, 85, 247, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .admin-btn.danger {
+            background: var(--accent-red);
+        }
+
+        .admin-btn.danger:hover {
+            box-shadow: 0 5px 20px var(--glow-red);
+        }
+
+        .stock-admin-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background: var(--bg-tertiary);
+            border-radius: 6px;
+            margin-bottom: 10px;
+            border: 1px solid var(--border-color);
+        }
+
+        .delete-stock-btn {
+            padding: 6px 12px;
+            background: var(--accent-red);
+            border: none;
+            border-radius: 4px;
+            color: white;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.3s;
+        }
+
+        .delete-stock-btn:hover {
+            box-shadow: 0 3px 10px var(--glow-red);
+        }
+
+        .admin-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            background: var(--accent-purple);
+            border: none;
+            border-radius: 20px;
+            color: white;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+            cursor: pointer;
+            z-index: 100;
+            transition: all 0.3s;
+        }
+
+        .admin-toggle:hover {
+            box-shadow: 0 5px 20px rgba(168, 85, 247, 0.5);
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+            
+            .stock-list {
+                max-height: 400px;
+            }
+        }
+
+        /* Toast Notification */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--accent-green);
+            border-radius: 8px;
+            padding: 16px 24px;
+            box-shadow: 0 10px 40px var(--glow-green);
+            display: none;
+            animation: toastSlide 0.4s ease;
+            z-index: 2000;
+        }
+
+        .toast.active {
+            display: block;
+        }
+
+        @keyframes toastSlide {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-grid"></div>
+    
+    <div class="container">
+        <header>
+            <div style="display: flex; flex-direction: column; gap: 5px;">
+                <div class="logo">
+                    <img src="logo.png" alt="FWB Logo" class="logo-eagle">
+                    FRANKFURTER WERTPAPIERBÖRSE
+                </div>
+                <div style="font-size: 0.7rem; color: var(--text-secondary); font-weight: 400; letter-spacing: 0.5px;">
+                    Developed by Claude AI & Presented by E.W.Shosha
+                </div>
+            </div>
+            <div class="user-info">
+                <div class="balance">
+                    <div class="balance-label">사용자</div>
+                    <div style="font-size: 1.1rem; font-weight: 600; color: var(--accent-blue);" id="currentUserId">Guest</div>
+                </div>
+                <div class="balance">
+                    <div class="balance-label">총 자산</div>
+                    <div class="balance-amount" id="totalBalance">₩10,000,000</div>
+                </div>
+                <div class="balance">
+                    <div class="balance-label">현금</div>
+                    <div class="balance-amount" id="cashBalance">₩10,000,000</div>
+                </div>
+                <div class="rank-badge">순위 #<span id="userRank">1</span></div>
+                <button class="transfer-btn" onclick="openTransferModal()">계좌이체</button>
+                <button class="transfer-btn" style="background: var(--accent-purple);" onclick="logout()">로그아웃</button>
+            </div>
+        </header>
+
+        <button class="admin-toggle" onclick="toggleAdmin()">🔧 관리자 모드</button>
+
+        <div class="dashboard">
+            <!-- Stock List Panel -->
+            <div class="stock-list">
+                <div class="panel-title">📊 종목 리스트</div>
+                <div id="stockListContainer"></div>
+            </div>
+
+            <!-- Chart Area -->
+            <div class="chart-area">
+                <div class="chart-header">
+                    <div class="chart-stock-info">
+                        <h2 id="chartSymbol">TECH-001</h2>
+                        <div class="current-price" id="chartPrice">₩125,000</div>
+                        <div class="price-change up" id="chartChange">+2,500 (+2.04%)</div>
+                    </div>
+                    <div class="time-selector">
+                        <button class="time-btn active" data-range="1M">1분</button>
+                        <button class="time-btn" data-range="30M">30분</button>
+                        <button class="time-btn" data-range="1H">1시간</button>
+                        <button class="time-btn" data-range="1D">1일</button>
+                        <button class="time-btn" data-range="1MO">1개월</button>
+                    </div>
+                </div>
+                <div id="stockChart">
+                    <canvas class="chart-canvas" id="chartCanvas"></canvas>
+                </div>
+            </div>
+
+            <!-- Trading Panel -->
+            <div class="trading-panel">
+                <div class="panel-title">💰 매매</div>
+                <div class="trade-tabs">
+                    <div class="trade-tab buy active" onclick="switchTab('buy')">매수</div>
+                    <div class="trade-tab sell" onclick="switchTab('sell')">매도</div>
+                </div>
+
+                <div class="input-group">
+                    <label class="input-label">수량</label>
+                    <input type="number" class="input-field" id="tradeQuantity" value="1" min="1">
+                </div>
+
+                <div class="input-group">
+                    <label class="input-label">가격</label>
+                    <input type="number" class="input-field" id="tradePrice" value="125000" readonly>
+                </div>
+
+                <div class="trade-summary">
+                    <div class="summary-row">
+                        <span>주문 수량:</span>
+                        <span id="summaryQuantity">1 주</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>주문 단가:</span>
+                        <span id="summaryPrice">₩125,000</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>총 주문 금액:</span>
+                        <span id="summaryTotal">₩125,000</span>
+                    </div>
+                </div>
+
+                <button class="execute-btn buy" id="executeBtn" onclick="executeTrade()">
+                    매수 주문
+                </button>
+
+                <div class="portfolio-section">
+                    <div class="panel-title">📈 내 포트폴리오</div>
+                    <div id="portfolioContainer">
+                        <div style="text-align: center; color: var(--text-secondary); padding: 20px;">
+                            보유 종목이 없습니다
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Leaderboard -->
+        <div class="leaderboard">
+            <div class="panel-title">🏆 실시간 랭킹</div>
+            <div id="leaderboardContainer"></div>
+        </div>
+
+        <!-- Admin Panel -->
+        <div class="admin-panel" id="adminPanel" style="display: none;">
+            <div class="admin-header">
+                <div class="panel-title">🔧 관리자 패널</div>
+                <button class="admin-btn" onclick="changeAdminPassword()">🔑 비밀번호 변경</button>
+            </div>
+            
+            <div style="margin-bottom: 30px;">
+                <h3 style="color: var(--accent-purple); margin-bottom: 15px; font-size: 1rem;">새 기업 추가</h3>
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 15px;">
+                    <div class="input-group" style="margin-bottom: 0;">
+                        <label class="input-label">심볼 (예: TECH-009)</label>
+                        <input type="text" class="input-field" id="newStockSymbol" placeholder="TECH-009">
+                    </div>
+                    <div class="input-group" style="margin-bottom: 0;">
+                        <label class="input-label">기업명</label>
+                        <input type="text" class="input-field" id="newStockName" placeholder="새로운 기업">
+                    </div>
+                    <div class="input-group" style="margin-bottom: 0;">
+                        <label class="input-label">초기 주가 (₩)</label>
+                        <input type="number" class="input-field" id="newStockPrice" placeholder="100000" value="100000">
+                    </div>
+                    <div class="input-group" style="margin-bottom: 0;">
+                        <label class="input-label">섹터</label>
+                        <select class="input-field" id="newStockSector">
+                            <option value="technology">Technology</option>
+                            <option value="finance">Finance</option>
+                            <option value="biotech">Biotech</option>
+                            <option value="automotive">Automotive</option>
+                            <option value="energy">Energy</option>
+                            <option value="entertainment">Entertainment</option>
+                            <option value="food">Food</option>
+                            <option value="realestate">Real Estate</option>
+                        </select>
+                    </div>
+                </div>
+                <button class="admin-btn" onclick="addNewStock()">+ 기업 추가</button>
+            </div>
+
+            <div>
+                <h3 style="color: var(--accent-red); margin-bottom: 15px; font-size: 1rem;">기업 관리</h3>
+                <div id="adminStockList"></div>
+            </div>
+
+            <div>
+                <h3 style="color: var(--accent-purple); margin-bottom: 15px; font-size: 1rem;">계좌 관리</h3>
+                <button class="admin-btn" onclick="resetAccount()" style="background: var(--accent-red);">계좌 리셋</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Transfer Modal -->
+    <div class="modal" id="transferModal">
+        <div class="modal-content" style="position: relative;">
+            <button class="modal-close" onclick="closeTransferModal()">×</button>
+            <div class="modal-header">계좌 이체</div>
+            
+            <div class="input-group">
+                <label class="input-label">받는 사람 ID</label>
+                <input type="text" class="input-field" id="recipientId" placeholder="사용자 ID 입력">
+            </div>
+
+            <div class="input-group">
+                <label class="input-label">이체 금액</label>
+                <input type="number" class="input-field" id="transferAmount" placeholder="금액 입력" min="1000">
+            </div>
+
+            <button class="execute-btn buy" onclick="executeTransfer()">이체하기</button>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast"></div>
+
+    <!-- Login/Signup Modal -->
+    <div class="modal" id="loginModal" style="display: flex;">
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-header" id="authTitle">로그인</div>
+            
+            <div id="loginForm">
+                <div class="input-group">
+                    <label class="input-label">사용자 ID</label>
+                    <input type="text" class="input-field" id="loginUserId" placeholder="ID 입력">
+                </div>
+
+                <div class="input-group">
+                    <label class="input-label">비밀번호</label>
+                    <input type="password" class="input-field" id="loginPassword" placeholder="비밀번호 입력">
+                </div>
+
+                <button class="execute-btn buy" onclick="loginUser()" style="margin-bottom: 10px;">로그인</button>
+                <button class="execute-btn" onclick="switchToSignup()" style="background: var(--accent-purple);">회원가입</button>
+            </div>
+
+            <div id="signupForm" style="display: none;">
+                <div class="input-group">
+                    <label class="input-label">사용자 ID</label>
+                    <input type="text" class="input-field" id="signupUserId" placeholder="ID 입력 (4자 이상)">
+                </div>
+
+                <div class="input-group">
+                    <label class="input-label">비밀번호</label>
+                    <input type="password" class="input-field" id="signupPassword" placeholder="비밀번호 입력 (4자 이상)">
+                </div>
+
+                <div class="input-group">
+                    <label class="input-label">비밀번호 확인</label>
+                    <input type="password" class="input-field" id="signupPasswordConfirm" placeholder="비밀번호 재입력">
+                </div>
+
+                <button class="execute-btn buy" onclick="signupUser()" style="margin-bottom: 10px;">회원가입</button>
+                <button class="execute-btn" onclick="switchToLogin()" style="background: var(--text-secondary);">로그인으로 돌아가기</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script>
+        // ============================================
+        // Firebase 설정
+        // ============================================
+        // 여기에 Firebase 프로젝트 설정을 입력하세요
+        // Firebase Console (https://console.firebase.google.com/)에서 프로젝트 생성 후
+        // 프로젝트 설정 > 일반 > 내 앱 > Firebase SDK snippet > 구성에서 복사
+        const firebaseConfig = {
+            apiKey: "AIzaSyDczRJGqLpJ9xlLWPTFkOZU2tC3tMRvA1U",
+            authDomain: "stock-game-c3cad.firebaseapp.com",
+            databaseURL: "https://stock-game-c3cad-default-rtdb.firebaseio.com",
+            projectId: "stock-game-c3cad",
+            storageBucket: "stock-game-c3cad.appspot.com",
+            messagingSenderId: "638224580097",
+            appId: "1:638224580097:web:010c218bdc3460e57a8a00"
+        };
+
+        // Firebase 초기화
+        let database;
+        try {
+            firebase.initializeApp(firebaseConfig);
+            database = firebase.database();
+            console.log('Firebase 연결 성공!');
+        } catch (error) {
+            console.error('Firebase 연결 실패:', error);
+            alert('⚠️ Firebase 설정이 필요합니다!\n\n코드 상단의 firebaseConfig를 설정해주세요.\n\n설정 방법:\n1. https://console.firebase.google.com/ 접속\n2. 새 프로젝트 생성\n3. Realtime Database 활성화\n4. 프로젝트 설정에서 구성 정보 복사\n5. HTML 파일의 firebaseConfig에 붙여넣기');
+        }
+        // ============================================
+
+        // ============================================
+        // 관리자 비밀번호 설정 (여기서 수정 가능)
+        // ============================================
+        let ADMIN_PASSWORD = "admin1234";  // 기본 비밀번호
+        // ============================================
+
+        // 사용자 시스템
+        let currentUser = null;
+
+        // 가상 주식 데이터
+        const stocks = [
+            { symbol: 'TECH-001', name: '네오테크', price: 125000, change: 2.04, sector: 'technology' },
+            { symbol: 'FINC-002', name: '퓨처뱅크', price: 89500, change: -1.23, sector: 'finance' },
+            { symbol: 'BIO-003', name: '바이오젠', price: 234000, change: 5.67, sector: 'biotech' },
+            { symbol: 'AUTO-004', name: '스마트카', price: 67800, change: 3.21, sector: 'automotive' },
+            { symbol: 'ENR-005', name: '그린에너지', price: 145000, change: -0.87, sector: 'energy' },
+            { symbol: 'GAME-006', name: '넥스트게임즈', price: 98700, change: 8.42, sector: 'entertainment' },
+            { symbol: 'FOOD-007', name: '퓨전푸드', price: 52300, change: 1.15, sector: 'food' },
+            { symbol: 'REAL-008', name: '메트로부동산', price: 187000, change: -2.34, sector: 'realestate' },
+        ];
+
+        let currentStock = stocks[0];
+        let tradeMode = 'buy';
+        let userCash = 10000000;
+        let portfolio = {};
+        let chartInstance = null;
+
+        // 리더보드 데이터
+        const leaderboard = [
+            { name: 'TraderKing', profit: 2350000 },
+            { name: 'StockMaster', profit: 1890000 },
+            { name: 'InvestPro', profit: 1560000 },
+            { name: 'You', profit: 0 },
+            { name: 'MarketGuru', profit: -450000 },
+        ];
+
+        // 초기화
+        async function init() {
+            // 로그인 체크
+            const savedUser = localStorage.getItem('fwb_currentUser');
+            if (savedUser && database) {
+                currentUser = savedUser;
+                await loadUserData();
+                document.getElementById('loginModal').style.display = 'none';
+            } else {
+                document.getElementById('loginModal').style.display = 'flex';
+                return;
+            }
+
+            renderStockList();
+            renderLeaderboard();
+            renderAdminStockList();
+            selectStock(stocks[0]);
+            updatePortfolio();
+            startPriceSimulation();
+        }
+
+        // 사용자 데이터 로드
+        async function loadUserData() {
+            if (!currentUser || !database) {
+                currentUser = null;
+                userCash = 10000000;
+                portfolio = {};
+                return;
+            }
+
+            try {
+                const snapshot = await database.ref('users/' + currentUser).once('value');
+                const userData = snapshot.val();
+                
+                if (!userData) {
+                    userCash = 10000000;
+                    portfolio = {};
+                } else {
+                    userCash = userData.cash || 10000000;
+                    portfolio = userData.portfolio || {};
+                }
+                
+                document.getElementById('currentUserId').textContent = currentUser;
+                updateBalance();
+                updatePortfolio();
+            } catch (error) {
+                console.error('데이터 로드 실패:', error);
+                showToast('데이터 로드 중 오류가 발생했습니다!', 'error');
+            }
+        }
+
+        // 사용자 데이터 저장
+        async function saveUserData() {
+            if (!currentUser || !database) return;
+
+            try {
+                await database.ref('users/' + currentUser).update({
+                    cash: userCash,
+                    portfolio: portfolio,
+                    lastUpdate: new Date().toISOString()
+                });
+            } catch (error) {
+                console.error('데이터 저장 실패:', error);
+                showToast('데이터 저장 중 오류가 발생했습니다!', 'error');
+            }
+        }
+
+        // 로그인
+        async function loginUser() {
+            const userId = document.getElementById('loginUserId').value.trim();
+            const password = document.getElementById('loginPassword').value;
+
+            if (!userId || !password) {
+                showToast('ID와 비밀번호를 입력하세요!', 'error');
+                return;
+            }
+
+            if (!database) {
+                showToast('Firebase 연결이 필요합니다!', 'error');
+                return;
+            }
+
+            try {
+                const snapshot = await database.ref('users/' + userId).once('value');
+                const userData = snapshot.val();
+
+                if (!userData) {
+                    showToast('존재하지 않는 사용자입니다!', 'error');
+                    return;
+                }
+
+                if (userData.password !== password) {
+                    showToast('비밀번호가 올바르지 않습니다!', 'error');
+                    return;
+                }
+
+                currentUser = userId;
+                localStorage.setItem('fwb_currentUser', userId);
+                await loadUserData();
+                
+                document.getElementById('loginModal').style.display = 'none';
+                document.getElementById('loginUserId').value = '';
+                document.getElementById('loginPassword').value = '';
+                
+                renderStockList();
+                renderLeaderboard();
+                renderAdminStockList();
+                selectStock(stocks[0]);
+                updatePortfolio();
+                startPriceSimulation();
+                
+                showToast(`환영합니다, ${userId}님!`, 'success');
+            } catch (error) {
+                console.error('로그인 실패:', error);
+                showToast('로그인 중 오류가 발생했습니다!', 'error');
+            }
+        }
+
+        // 회원가입
+        async function signupUser() {
+            const userId = document.getElementById('signupUserId').value.trim();
+            const password = document.getElementById('signupPassword').value;
+            const passwordConfirm = document.getElementById('signupPasswordConfirm').value;
+
+            if (!userId || userId.length < 4) {
+                showToast('ID는 4자 이상이어야 합니다!', 'error');
+                return;
+            }
+
+            if (!password || password.length < 4) {
+                showToast('비밀번호는 4자 이상이어야 합니다!', 'error');
+                return;
+            }
+
+            if (password !== passwordConfirm) {
+                showToast('비밀번호가 일치하지 않습니다!', 'error');
+                return;
+            }
+
+            if (!database) {
+                showToast('Firebase 연결이 필요합니다!', 'error');
+                return;
+            }
+
+            try {
+                // 사용자 존재 여부 확인
+                const snapshot = await database.ref('users/' + userId).once('value');
+                if (snapshot.exists()) {
+                    showToast('이미 존재하는 ID입니다!', 'error');
+                    return;
+                }
+
+                // 새 사용자 생성
+                await database.ref('users/' + userId).set({
+                    password: password,
+                    cash: 10000000,
+                    portfolio: {},
+                    createdAt: new Date().toISOString()
+                });
+
+                showToast('회원가입 성공! 로그인해주세요.', 'success');
+                
+                document.getElementById('signupUserId').value = '';
+                document.getElementById('signupPassword').value = '';
+                document.getElementById('signupPasswordConfirm').value = '';
+                
+                switchToLogin();
+            } catch (error) {
+                console.error('회원가입 실패:', error);
+                showToast('회원가입 중 오류가 발생했습니다!', 'error');
+            }
+        }
+
+        // 로그아웃
+        function logout() {
+            if (!confirm('로그아웃 하시겠습니까?')) return;
+
+            saveUserData();
+            currentUser = null;
+            localStorage.removeItem('fwb_currentUser');
+            location.reload();
+        }
+
+        // 로그인/회원가입 화면 전환
+        function switchToSignup() {
+            document.getElementById('loginForm').style.display = 'none';
+            document.getElementById('signupForm').style.display = 'block';
+            document.getElementById('authTitle').textContent = '회원가입';
+        }
+
+        function switchToLogin() {
+            document.getElementById('signupForm').style.display = 'none';
+            document.getElementById('loginForm').style.display = 'block';
+            document.getElementById('authTitle').textContent = '로그인';
+        }
+
+        // 주식 리스트 렌더링
+        function renderStockList() {
+            const container = document.getElementById('stockListContainer');
+            container.innerHTML = stocks.map(stock => `
+                <div class="stock-item ${stock.symbol === currentStock.symbol ? 'active' : ''}" 
+                     onclick="selectStock(${JSON.stringify(stock).replace(/"/g, '&quot;')})">
+                    <div class="stock-symbol">${stock.symbol}</div>
+                    <div class="stock-name">${stock.name}</div>
+                    <div class="stock-price-info">
+                        <span class="stock-price">₩${stock.price.toLocaleString()}</span>
+                        <span class="stock-change ${stock.change >= 0 ? 'up' : 'down'}">
+                            ${stock.change >= 0 ? '+' : ''}${stock.change.toFixed(2)}%
+                        </span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 주식 선택
+        function selectStock(stock) {
+            currentStock = stock;
+            document.getElementById('chartSymbol').textContent = stock.symbol;
+            document.getElementById('chartPrice').textContent = `₩${stock.price.toLocaleString()}`;
+            document.getElementById('chartChange').textContent = 
+                `${stock.change >= 0 ? '+' : ''}${(stock.price * stock.change / 100).toLocaleString()} (${stock.change >= 0 ? '+' : ''}${stock.change.toFixed(2)}%)`;
+            document.getElementById('chartChange').className = `price-change ${stock.change >= 0 ? 'up' : 'down'}`;
+            document.getElementById('tradePrice').value = stock.price;
+            
+            renderStockList();
+            updateChart();
+            updateTradeSummary();
+        }
+
+        // 차트 업데이트
+        function updateChart() {
+            const canvas = document.getElementById('chartCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            // 타임프레임에 따른 데이터 포인트 수 결정
+            const activeTimeBtn = document.querySelector('.time-btn.active');
+            const timeRange = activeTimeBtn ? activeTimeBtn.getAttribute('data-range') : '1M';
+            
+            let dataPoints;
+            switch(timeRange) {
+                case '1M': dataPoints = 60; break;    // 1분 = 60개 포인트 (1초마다)
+                case '30M': dataPoints = 30; break;   // 30분 = 30개 포인트 (1분마다)
+                case '1H': dataPoints = 60; break;    // 1시간 = 60개 포인트 (1분마다)
+                case '1D': dataPoints = 24; break;    // 1일 = 24개 포인트 (1시간마다)
+                case '1MO': dataPoints = 30; break;   // 1개월 = 30개 포인트 (1일마다)
+                default: dataPoints = 60;
+            }
+            
+            const labels = Array.from({length: dataPoints}, (_, i) => i);
+            const basePrice = currentStock.price;
+            const data = Array.from({length: dataPoints}, (_, i) => {
+                const volatility = basePrice * 0.05; // 5% 변동성
+                const trend = (currentStock.change / 100) * basePrice * (i / dataPoints);
+                return basePrice + trend + (Math.random() - 0.5) * volatility;
+            });
+
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
+
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: currentStock.symbol,
+                        data: data,
+                        borderColor: currentStock.change >= 0 ? '#00ff88' : '#ff3366',
+                        backgroundColor: currentStock.change >= 0 ? 
+                            'rgba(0, 255, 136, 0.1)' : 'rgba(255, 51, 102, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        fill: true,
+                        pointRadius: 0,
+                        pointHoverRadius: 5,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#1a2234',
+                            titleColor: '#00d4ff',
+                            bodyColor: '#e8edf4',
+                            borderColor: '#2a3547',
+                            borderWidth: 1,
+                            callbacks: {
+                                label: (context) => `₩${context.parsed.y.toLocaleString()}`
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { display: false },
+                        y: {
+                            grid: { color: '#2a3547' },
+                            ticks: {
+                                color: '#8b95a8',
+                                callback: (value) => `₩${value.toLocaleString()}`
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // 탭 전환
+        function switchTab(mode) {
+            tradeMode = mode;
+            document.querySelectorAll('.trade-tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelector(`.trade-tab.${mode}`).classList.add('active');
+            
+            const btn = document.getElementById('executeBtn');
+            btn.className = `execute-btn ${mode}`;
+            btn.textContent = mode === 'buy' ? '매수 주문' : '매도 주문';
+            
+            updateTradeSummary();
+        }
+
+        // 거래 요약 업데이트
+        function updateTradeSummary() {
+            const quantity = parseInt(document.getElementById('tradeQuantity').value) || 0;
+            const price = currentStock.price;
+            const total = quantity * price;
+
+            document.getElementById('summaryQuantity').textContent = `${quantity} 주`;
+            document.getElementById('summaryPrice').textContent = `₩${price.toLocaleString()}`;
+            document.getElementById('summaryTotal').textContent = `₩${total.toLocaleString()}`;
+        }
+
+        document.getElementById('tradeQuantity').addEventListener('input', updateTradeSummary);
+
+        // 거래 실행
+        function executeTrade() {
+            const quantity = parseInt(document.getElementById('tradeQuantity').value);
+            const price = currentStock.price;
+            const total = quantity * price;
+
+            if (tradeMode === 'buy') {
+                if (total > userCash) {
+                    showToast('현금이 부족합니다!', 'error');
+                    return;
+                }
+                
+                userCash -= total;
+                if (!portfolio[currentStock.symbol]) {
+                    portfolio[currentStock.symbol] = {
+                        name: currentStock.name,
+                        quantity: 0,
+                        avgPrice: 0
+                    };
+                }
+                
+                const holding = portfolio[currentStock.symbol];
+                holding.avgPrice = ((holding.avgPrice * holding.quantity) + total) / (holding.quantity + quantity);
+                holding.quantity += quantity;
+                
+                showToast(`${currentStock.symbol} ${quantity}주 매수 완료!`, 'success');
+            } else {
+                if (!portfolio[currentStock.symbol] || portfolio[currentStock.symbol].quantity < quantity) {
+                    showToast('보유 수량이 부족합니다!', 'error');
+                    return;
+                }
+                
+                userCash += total;
+                portfolio[currentStock.symbol].quantity -= quantity;
+                
+                if (portfolio[currentStock.symbol].quantity === 0) {
+                    delete portfolio[currentStock.symbol];
+                }
+                
+                showToast(`${currentStock.symbol} ${quantity}주 매도 완료!`, 'success');
+            }
+
+            updateBalance();
+            updatePortfolio();
+            saveUserData(); // 데이터 저장
+            document.getElementById('tradeQuantity').value = 1;
+            updateTradeSummary();
+        }
+
+        // 잔액 업데이트
+        function updateBalance() {
+            document.getElementById('cashBalance').textContent = `₩${userCash.toLocaleString()}`;
+            
+            let portfolioValue = userCash;
+            Object.keys(portfolio).forEach(symbol => {
+                const stock = stocks.find(s => s.symbol === symbol);
+                portfolioValue += portfolio[symbol].quantity * stock.price;
+            });
+            
+            document.getElementById('totalBalance').textContent = `₩${portfolioValue.toLocaleString()}`;
+            
+            // 랭킹 업데이트
+            const profit = portfolioValue - 10000000;
+            leaderboard.find(l => l.name === 'You').profit = profit;
+            leaderboard.sort((a, b) => b.profit - a.profit);
+            renderLeaderboard();
+        }
+
+        // 포트폴리오 업데이트
+        function updatePortfolio() {
+            const container = document.getElementById('portfolioContainer');
+            
+            if (Object.keys(portfolio).length === 0) {
+                container.innerHTML = '<div style="text-align: center; color: var(--text-secondary); padding: 20px;">보유 종목이 없습니다</div>';
+                return;
+            }
+
+            container.innerHTML = Object.keys(portfolio).map(symbol => {
+                const holding = portfolio[symbol];
+                const stock = stocks.find(s => s.symbol === symbol);
+                const currentValue = holding.quantity * stock.price;
+                const costBasis = holding.quantity * holding.avgPrice;
+                const profitLoss = currentValue - costBasis;
+                const profitLossPercent = (profitLoss / costBasis) * 100;
+
+                return `
+                    <div class="portfolio-item">
+                        <div class="portfolio-header">
+                            <span class="portfolio-symbol">${symbol}</span>
+                            <span class="portfolio-pl ${profitLoss >= 0 ? 'up' : 'down'}" style="color: ${profitLoss >= 0 ? 'var(--accent-green)' : 'var(--accent-red)'}">
+                                ${profitLoss >= 0 ? '+' : ''}₩${profitLoss.toLocaleString()} (${profitLossPercent.toFixed(2)}%)
+                            </span>
+                        </div>
+                        <div class="portfolio-details">
+                            <span>${holding.quantity}주 보유</span>
+                            <span>평단 ₩${holding.avgPrice.toLocaleString()}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // 리더보드 렌더링
+        function renderLeaderboard() {
+            const container = document.getElementById('leaderboardContainer');
+            const userRank = leaderboard.findIndex(l => l.name === 'You') + 1;
+            document.getElementById('userRank').textContent = userRank;
+
+            container.innerHTML = leaderboard.map((user, index) => {
+                const rankClass = index === 0 ? 'first' : index === 1 ? 'second' : index === 2 ? 'third' : 'other';
+                return `
+                    <div class="leaderboard-item" style="${user.name === 'You' ? 'border-color: var(--accent-blue);' : ''}">
+                        <div class="rank-number ${rankClass}">${index + 1}</div>
+                        <div class="leaderboard-info">
+                            <div class="leaderboard-name">${user.name}${user.name === 'You' ? ' (나)' : ''}</div>
+                            <div class="leaderboard-profit" style="color: ${user.profit >= 0 ? 'var(--accent-green)' : 'var(--accent-red)'}">
+                                ${user.profit >= 0 ? '+' : ''}₩${user.profit.toLocaleString()}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // 가격 시뮬레이션 - 1분마다 -5% ~ +5% 변동
+        function startPriceSimulation() {
+            setInterval(() => {
+                stocks.forEach(stock => {
+                    // -5% ~ +5% 랜덤 변동
+                    const changePercent = (Math.random() * 10 - 5) / 100; // -0.05 ~ 0.05
+                    const oldPrice = stock.price;
+                    stock.price = Math.max(1000, stock.price * (1 + changePercent));
+                    stock.change = ((stock.price - oldPrice) / oldPrice) * 100;
+                });
+                
+                renderStockList();
+                if (currentStock) {
+                    selectStock(stocks.find(s => s.symbol === currentStock.symbol));
+                }
+                updatePortfolio();
+                updateBalance();
+            }, 60000); // 60초 = 1분
+        }
+
+        // 계좌이체 모달
+        function openTransferModal() {
+            document.getElementById('transferModal').classList.add('active');
+        }
+
+        function closeTransferModal() {
+            document.getElementById('transferModal').classList.remove('active');
+        }
+
+        async function executeTransfer() {
+            const recipientId = document.getElementById('recipientId').value.trim();
+            const amount = parseInt(document.getElementById('transferAmount').value);
+
+            if (!recipientId) {
+                showToast('받는 사람 ID를 입력하세요!', 'error');
+                return;
+            }
+
+            if (recipientId === currentUser) {
+                showToast('자기 자신에게는 이체할 수 없습니다!', 'error');
+                return;
+            }
+
+            if (!database) {
+                showToast('Firebase 연결이 필요합니다!', 'error');
+                return;
+            }
+
+            if (!amount || amount < 1000) {
+                showToast('이체 금액은 최소 1,000원 이상이어야 합니다!', 'error');
+                return;
+            }
+
+            if (amount > userCash) {
+                showToast('현금이 부족합니다!', 'error');
+                return;
+            }
+
+            try {
+                // 받는 사람 존재 확인
+                const recipientSnapshot = await database.ref('users/' + recipientId).once('value');
+                if (!recipientSnapshot.exists()) {
+                    showToast('존재하지 않는 사용자입니다!', 'error');
+                    return;
+                }
+
+                const recipientData = recipientSnapshot.val();
+
+                // 보내는 사람 차감
+                userCash -= amount;
+                await saveUserData();
+
+                // 받는 사람 증가
+                await database.ref('users/' + recipientId).update({
+                    cash: (recipientData.cash || 10000000) + amount,
+                    lastUpdate: new Date().toISOString()
+                });
+
+                updateBalance();
+                closeTransferModal();
+                showToast(`${recipientId}님께 ₩${amount.toLocaleString()} 이체 완료!`, 'success');
+                
+                document.getElementById('recipientId').value = '';
+                document.getElementById('transferAmount').value = '';
+            } catch (error) {
+                console.error('이체 실패:', error);
+                showToast('이체 중 오류가 발생했습니다!', 'error');
+            }
+        }
+
+        // 토스트 알림
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.style.borderColor = type === 'success' ? 'var(--accent-green)' : 'var(--accent-red)';
+            toast.style.boxShadow = type === 'success' ? '0 10px 40px var(--glow-green)' : '0 10px 40px var(--glow-red)';
+            toast.classList.add('active');
+            
+            setTimeout(() => {
+                toast.classList.remove('active');
+            }, 3000);
+        }
+
+        // 타임 프레임 선택
+        document.querySelectorAll('.time-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                updateChart();
+            });
+        });
+
+        // 초기화 실행
+        init();
+
+        // 관리자 패널 토글 (비밀번호 확인)
+        function toggleAdmin() {
+            const panel = document.getElementById('adminPanel');
+            
+            if (panel.style.display === 'none') {
+                // 패널 열기 시 비밀번호 확인
+                const inputPassword = prompt('관리자 비밀번호를 입력하세요:');
+                
+                if (inputPassword === null) {
+                    return; // 취소 버튼
+                }
+                
+                if (inputPassword === ADMIN_PASSWORD) {
+                    panel.style.display = 'block';
+                    showToast('관리자 모드 활성화!', 'success');
+                } else {
+                    showToast('비밀번호가 올바르지 않습니다!', 'error');
+                }
+            } else {
+                // 패널 닫기
+                panel.style.display = 'none';
+            }
+        }
+
+        // 관리자 비밀번호 변경
+        function changeAdminPassword() {
+            const currentPassword = prompt('현재 비밀번호를 입력하세요:');
+            
+            if (currentPassword !== ADMIN_PASSWORD) {
+                showToast('현재 비밀번호가 올바르지 않습니다!', 'error');
+                return;
+            }
+            
+            const newPassword = prompt('새 비밀번호를 입력하세요:');
+            
+            if (!newPassword || newPassword.length < 4) {
+                showToast('비밀번호는 최소 4자 이상이어야 합니다!', 'error');
+                return;
+            }
+            
+            const confirmPassword = prompt('새 비밀번호를 다시 입력하세요:');
+            
+            if (newPassword !== confirmPassword) {
+                showToast('비밀번호가 일치하지 않습니다!', 'error');
+                return;
+            }
+            
+            ADMIN_PASSWORD = newPassword;
+            showToast('비밀번호가 변경되었습니다!', 'success');
+        }
+
+        // 관리자 주식 리스트 렌더링
+        function renderAdminStockList() {
+            const container = document.getElementById('adminStockList');
+            container.innerHTML = stocks.map(stock => `
+                <div class="stock-admin-item">
+                    <div>
+                        <div style="font-weight: 700; color: var(--accent-blue);">${stock.symbol}</div>
+                        <div style="font-size: 0.85rem; color: var(--text-secondary);">${stock.name} - ₩${stock.price.toLocaleString()}</div>
+                    </div>
+                    <button class="delete-stock-btn" onclick="deleteStock('${stock.symbol}')">삭제</button>
+                </div>
+            `).join('');
+        }
+
+        // 새 기업 추가
+        function addNewStock() {
+            const symbol = document.getElementById('newStockSymbol').value.trim();
+            const name = document.getElementById('newStockName').value.trim();
+            const price = parseInt(document.getElementById('newStockPrice').value) || 100000;
+            const sector = document.getElementById('newStockSector').value;
+
+            if (!symbol || !name) {
+                showToast('심볼과 기업명을 입력해주세요!', 'error');
+                return;
+            }
+
+            if (stocks.find(s => s.symbol === symbol)) {
+                showToast('이미 존재하는 심볼입니다!', 'error');
+                return;
+            }
+
+            stocks.push({
+                symbol: symbol,
+                name: name,
+                price: price,
+                change: 0,
+                sector: sector
+            });
+
+            renderStockList();
+            renderAdminStockList();
+            showToast(`${name} (${symbol}) 추가 완료!`, 'success');
+
+            // 입력 필드 초기화
+            document.getElementById('newStockSymbol').value = '';
+            document.getElementById('newStockName').value = '';
+            document.getElementById('newStockPrice').value = '100000';
+        }
+
+        // 기업 삭제
+        function deleteStock(symbol) {
+            if (stocks.length <= 1) {
+                showToast('최소 1개의 기업은 유지해야 합니다!', 'error');
+                return;
+            }
+
+            const index = stocks.findIndex(s => s.symbol === symbol);
+            if (index === -1) return;
+
+            const stockName = stocks[index].name;
+            
+            // 포트폴리오에서 해당 주식 보유 중이면 현금으로 환산
+            if (portfolio[symbol]) {
+                const refundAmount = portfolio[symbol].quantity * stocks[index].price;
+                userCash += refundAmount;
+                delete portfolio[symbol];
+                updateBalance();
+                updatePortfolio();
+            }
+
+            stocks.splice(index, 1);
+
+            // 현재 선택된 주식이 삭제되면 첫 번째 주식으로 전환
+            if (currentStock.symbol === symbol) {
+                selectStock(stocks[0]);
+            }
+
+            renderStockList();
+            renderAdminStockList();
+            showToast(`${stockName} 삭제 완료!`, 'success');
+        }
+
+        // 계좌 리셋
+        function resetAccount() {
+            if (!confirm('정말로 계좌를 리셋하시겠습니까? 모든 보유 주식이 사라지고 초기 자본금 1천만원으로 돌아갑니다.')) {
+                return;
+            }
+
+            userCash = 10000000;
+            portfolio = {};
+            updateBalance();
+            updatePortfolio();
+            saveUserData(); // 데이터 저장
+            showToast('계좌가 리셋되었습니다!', 'success');
+        }
+    </script>
+</body>
+</html>
