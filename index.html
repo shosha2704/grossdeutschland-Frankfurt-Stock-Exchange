@@ -1500,9 +1500,6 @@ function selectStock(stock) {
 function updateChart() {
     if (!currentStock) return;
     
-    const canvas = document.getElementById('chartCanvas');
-    const ctx = canvas.getContext('2d');
-    
     const activeTimeBtn = document.querySelector('.time-btn.active');
     const timeRange = activeTimeBtn ? activeTimeBtn.getAttribute('data-range') : '1M';
     
@@ -1512,48 +1509,94 @@ function updateChart() {
     
     switch(timeRange) {
         case '1M':
-            dataPoints = 7;
-            labels = ['6분전', '5분전', '4분전', '3분전', '2분전', '1분전', '현재'];
-            timeFormat = '6분간 추이';
+            dataPoints = 5;
+            labels = ['4분전', '3분전', '2분전', '1분전', '현재'];
+            timeFormat = '4분간 추이';
             break;
         case '30M':
-            dataPoints = 7;
-            labels = ['180분전', '150분전', '120분전', '90분전', '60분전', '30분전', '현재'];
-            timeFormat = '3시간 추이';
+            dataPoints = 5;
+            labels = ['120분전', '90분전', '60분전', '30분전', '현재'];
+            timeFormat = '2시간 추이';
             break;
         case '1H':
-            dataPoints = 7;
-            labels = ['6시간전', '5시간전', '4시간전', '3시간전', '2시간전', '1시간전', '현재'];
-            timeFormat = '6시간 추이';
+            dataPoints = 5;
+            labels = ['4시간전', '3시간전', '2시간전', '1시간전', '현재'];
+            timeFormat = '4시간 추이';
             break;
         case '1D':
-            dataPoints = 7;
-            labels = ['6일전', '5일전', '4일전', '3일전', '2일전', '1일전', '현재'];
-            timeFormat = '1주일 추이';
+            dataPoints = 5;
+            labels = ['4일전', '3일전', '2일전', '1일전', '현재'];
+            timeFormat = '4일간 추이';
             break;
         case '1MO':
-            dataPoints = 7;
-            labels = ['6개월전', '5개월전', '4개월전', '3개월전', '2개월전', '1개월전', '현재'];
-            timeFormat = '6개월 추이';
+            dataPoints = 5;
+            labels = ['4개월전', '3개월전', '2개월전', '1개월전', '현재'];
+            timeFormat = '4개월 추이';
             break;
         default:
-            dataPoints = 7;
-            labels = ['6분전', '5분전', '4분전', '3분전', '2분전', '1분전', '현재'];
+            dataPoints = 5;
+            labels = ['4분전', '3분전', '2분전', '1분전', '현재'];
             timeFormat = '기본';
     }
     
-    const data = [];
-    let price = basePrice * 0.95; // 과거는 현재보다 약간 낮게 시작
+    // Firebase에서 실제 히스토리 데이터 가져오기
+    let data = [];
     
-    // 과거부터 현재까지 랜덤 워크
-    for (let i = 0; i < dataPoints - 1; i++) {
-        const randomChange = (Math.random() - 0.5) * (basePrice * 0.03); // ±3% 변동
-        price = Math.max(1000, price + randomChange);
-        data.push(price);
+    if (database && currentStock) {
+        const historyKey = `history_${timeRange}`;
+        const historyRef = database.ref(`stocks/${currentStock.symbol}/${historyKey}`);
+        
+        historyRef.once('value').then((snapshot) => {
+            const historyData = snapshot.val();
+            
+            if (historyData && historyData.prices && historyData.prices.length > 0) {
+                // Firebase에 저장된 실제 히스토리 사용
+                data = historyData.prices.slice(-dataPoints); // 최근 dataPoints개만
+                
+                // 부족하면 현재 가격으로 채우기
+                while (data.length < dataPoints) {
+                    data.unshift(basePrice * 0.98);
+                }
+            } else {
+                // 히스토리가 없으면 임시 데이터 생성
+                let price = basePrice * 0.95;
+                for (let i = 0; i < dataPoints - 1; i++) {
+                    const randomChange = (Math.random() - 0.5) * (basePrice * 0.03);
+                    price = Math.max(1000, price + randomChange);
+                    data.push(price);
+                }
+                data.push(basePrice);
+            }
+            
+            // 차트 그리기
+            renderChart(data, labels, timeFormat);
+        }).catch(() => {
+            // 에러 시 임시 데이터 생성
+            let price = basePrice * 0.95;
+            for (let i = 0; i < dataPoints - 1; i++) {
+                const randomChange = (Math.random() - 0.5) * (basePrice * 0.03);
+                price = Math.max(1000, price + randomChange);
+                data.push(price);
+            }
+            data.push(basePrice);
+            renderChart(data, labels, timeFormat);
+        });
+    } else {
+        // Firebase 없으면 임시 데이터
+        let price = basePrice * 0.95;
+        for (let i = 0; i < dataPoints - 1; i++) {
+            const randomChange = (Math.random() - 0.5) * (basePrice * 0.03);
+            price = Math.max(1000, price + randomChange);
+            data.push(price);
+        }
+        data.push(basePrice);
+        renderChart(data, labels, timeFormat);
     }
-    
-    // 마지막은 현재 가격
-    data.push(basePrice);
+}
+
+function renderChart(data, labels, timeFormat) {
+    const canvas = document.getElementById('chartCanvas');
+    const ctx = canvas.getContext('2d');
 
     if (chartInstance) {
         chartInstance.destroy();
@@ -1803,7 +1846,8 @@ function startPriceSimulation() {
         try {
             const updates = {};
             
-            stocks.forEach(stock => {
+            for (const stock of stocks) {
+                // -5% ~ +5% 랜덤 변동
                 const changePercent = (Math.random() * 10 - 5) / 100;
                 const oldPrice = stock.price;
                 const newPrice = Math.max(1000, stock.price * (1 + changePercent));
@@ -1811,15 +1855,51 @@ function startPriceSimulation() {
                 
                 updates[`stocks/${stock.symbol}/price`] = Math.round(newPrice);
                 updates[`stocks/${stock.symbol}/change`] = parseFloat(change.toFixed(2));
-            });
+                
+                // 각 타임프레임별 히스토리 업데이트
+                const timeframes = ['1M', '30M', '1H', '1D', '1MO'];
+                
+                for (const tf of timeframes) {
+                    const historyKey = `history_${tf}`;
+                    const historyRef = database.ref(`stocks/${stock.symbol}/${historyKey}`);
+                    
+                    // 기존 히스토리 가져오기
+                    const snapshot = await historyRef.once('value');
+                    const historyData = snapshot.val();
+                    let prices = historyData?.prices || [];
+                    
+                    // 새 가격 추가
+                    prices.push(Math.round(newPrice));
+                    
+                    // 최대 개수 제한 (타임프레임별로 다르게)
+                    let maxLength;
+                    switch(tf) {
+                        case '1M': maxLength = 10; break;     // 10분
+                        case '30M': maxLength = 20; break;    // 10시간
+                        case '1H': maxLength = 30; break;     // 30시간
+                        case '1D': maxLength = 30; break;     // 30일
+                        case '1MO': maxLength = 12; break;    // 12개월
+                        default: maxLength = 10;
+                    }
+                    
+                    // 오래된 데이터 제거
+                    if (prices.length > maxLength) {
+                        prices = prices.slice(-maxLength);
+                    }
+                    
+                    updates[`stocks/${stock.symbol}/${historyKey}/prices`] = prices;
+                    updates[`stocks/${stock.symbol}/${historyKey}/lastUpdate`] = Date.now();
+                }
+            }
             
+            // Firebase에 한 번에 업데이트
             await database.ref().update(updates);
-            console.log('📈 주가 업데이트 완료');
+            console.log('📈 주가 및 히스토리 업데이트 완료');
             
         } catch (error) {
             console.error('주가 업데이트 실패:', error);
         }
-    }, 60000);
+    }, 60000); // 60초 = 1분
 }
 
 // ============================================
