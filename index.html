@@ -1834,8 +1834,8 @@ function startPriceSimulation() {
             
             // 🔥 Firebase에서 가져온 최신 데이터로 모든 기업 업데이트
             for (const stock of currentStocks) {
-                // -5% ~ +6% 랜덤 변동 (상승 편향)
-                const changePercent = (Math.random() * 11 - 5) / 100;
+                // -10% ~ +5% 랜덤 변동 (상승 편향)
+                const changePercent = (Math.random() * 5 - 15) / 100;
                 const oldPrice = stock.price;
                 const newPrice = Math.max(1000, stock.price * (1 + changePercent));
                 const change = ((newPrice - oldPrice) / oldPrice) * 100;
