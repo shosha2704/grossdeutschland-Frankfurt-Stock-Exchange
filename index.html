@@ -1834,8 +1834,8 @@ function startPriceSimulation() {
             const updates = {};
             
             for (const stock of currentStocks) {
-                // -4% ~ +7% 랜덤 변동
-                const changePercent = (Math.random() * 11 - 7) / 100;
+                // -10% ~ +2% 랜덤 변동
+                const changePercent = (Math.random() * 12 - 10) / 100;
                 const oldPrice = stock.price;
                 
                 // 🔒 주가 최저선: 1000원 절대 보장
