@@ -1818,9 +1818,22 @@ function startPriceSimulation() {
         }
         
         try {
+            // 🔥 매번 최신 주식 데이터를 Firebase에서 가져옴 (로컬 캐시 무시)
+            const stocksSnapshot = await database.ref('stocks').once('value');
+            const stocksData = stocksSnapshot.val();
+            
+            if (!stocksData) {
+                console.warn('⚠️ 주식 데이터가 없습니다');
+                return;
+            }
+            
+            const currentStocks = Object.values(stocksData);
+            console.log(`📊 업데이트할 기업 수: ${currentStocks.length}개`);
+            
             const updates = {};
             
-            for (const stock of stocks) {
+            // 🔥 Firebase에서 가져온 최신 데이터로 모든 기업 업데이트
+            for (const stock of currentStocks) {
                 // -5% ~ +6% 랜덤 변동 (상승 편향)
                 const changePercent = (Math.random() * 11 - 5) / 100;
                 const oldPrice = stock.price;
@@ -1830,7 +1843,7 @@ function startPriceSimulation() {
                 updates[`stocks/${stock.symbol}/price`] = Math.round(newPrice);
                 updates[`stocks/${stock.symbol}/change`] = parseFloat(change.toFixed(2));
                 
-                // 1분 히스토리만 업데이트
+                // 1분 히스토리 업데이트
                 const historyRef = database.ref(`stocks/${stock.symbol}/history_1M`);
                 const snapshot = await historyRef.once('value');
                 const historyData = snapshot.val();
@@ -1848,10 +1861,10 @@ function startPriceSimulation() {
             }
             
             await database.ref().update(updates);
-            console.log('📈 주가 업데이트 완료');
+            console.log(`📈 주가 업데이트 완료: ${currentStocks.length}개 기업 업데이트됨`);
             
         } catch (error) {
-            console.error('주가 업데이트 실패:', error);
+            console.error('❌ 주가 업데이트 실패:', error);
         }
     }, 60000); // 60초 = 1분
 }
