@@ -2321,6 +2321,58 @@ async function changeStockPrice() {
     }
 }
 
+
+// ============================================
+// 🔥 관리자 주가 설정 기능
+// ============================================
+async function changeStockPrice() {
+    const symbol = document.getElementById('priceChangeSymbol').value;
+    const newPrice = parseInt(document.getElementById('newPriceValue').value);
+
+    if (!symbol) {
+        showToast('종목을 선택하세요!', 'error');
+        return;
+    }
+
+    if (!newPrice || newPrice < 1000) {
+        showToast('주가는 최소 1,000원 이상이어야 합니다!', 'error');
+        return;
+    }
+
+    if (!database) {
+        showToast('Firebase 연결이 필요합니다!', 'error');
+        return;
+    }
+
+    const stock = stocks.find(s => s.symbol === symbol);
+    if (!stock) {
+        showToast('종목을 찾을 수 없습니다!', 'error');
+        return;
+    }
+
+    if (!confirm(`${stock.name} (${symbol})의 주가를 ₩${newPrice.toLocaleString()}로 변경하시겠습니까?`)) {
+        return;
+    }
+
+    try {
+        const oldPrice = stock.price;
+        const change = ((newPrice - oldPrice) / oldPrice) * 100;
+
+        await database.ref(`stocks/${symbol}`).update({
+            price: newPrice,
+            change: parseFloat(change.toFixed(2))
+        });
+
+        showToast(`${stock.name} 주가 변경: ₩${oldPrice.toLocaleString()} → ₩${newPrice.toLocaleString()}`, 'success');
+        
+        document.getElementById('newPriceValue').value = '';
+        document.getElementById('priceChangeSymbol').value = '';
+    } catch (error) {
+        console.error('주가 변경 실패:', error);
+        showToast('주가 변경 중 오류가 발생했습니다!', 'error');
+    }
+}
+
 async function deleteMyAccount() {
     if (!confirm('⚠️ 정말로 계좌를 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없으며, 모든 데이터가 영구 삭제됩니다!')) {
         return;
